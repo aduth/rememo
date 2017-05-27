@@ -1,0 +1,56 @@
+{
+  "name": "rememo",
+  "version": "1.0.0",
+  "description": "Memoized selectors for Redux and other immutable object derivation",
+  "main": "rememo.js",
+  "module": "es/rememo.js",
+  "files": [
+    "rememo.js",
+    "es"
+  ],
+  "scripts": {
+    "pretest": "npm run build:cjs",
+    "test": "mocha",
+    "build:iife": "rollup -c rollup.iife.config.js",
+    "postbuild:iife": "npm run uglify",
+    "build:cjs": "rollup -c rollup.cjs.config.js",
+    "build": "npm-run-all --parallel build:*",
+    "uglify": "uglifyjs dist/rememo.js -c -m > dist/rememo.min.js",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aduth/rememo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aduth/rememo/issues"
+  },
+  "author": {
+    "name": "Andrew Duthie",
+    "email": "andrew@andrewduthie.com",
+    "url": "http://andrewduthie.com"
+  },
+  "keywords": [
+    "redux",
+    "selector",
+    "selectors",
+    "memoize",
+    "memoization",
+    "cache"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "moize": "^2.3.3",
+    "shallow-equal": "^1.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "mocha": "^3.4.2",
+    "npm-run-all": "^4.0.2",
+    "rollup": "^0.41.6",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "sinon": "^2.3.2",
+    "uglify-js": "^3.0.11"
+  }
+}

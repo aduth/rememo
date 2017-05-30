@@ -6,6 +6,7 @@
   "module": "es/rememo.js",
   "files": [
     "rememo.js",
+    "dist",
     "es"
   ],
   "scripts": {

@@ -4,6 +4,8 @@ export default {
 	format: 'cjs',
 	external: [
 		'shallow-equal/arrays',
-		'moize'
+		'moize',
+		'moize/lib/utils',
+		'moize/lib/Cache'
 	]
 };

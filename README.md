@@ -45,6 +45,22 @@ var createSelector = window.rememo;
 </script>
 ```
 
+## API
+
+Rememo's default export is a function:
+
+```js
+createSelector( selector: Function, getDependants: Function ): Function
+```
+
+The returned function is a memoized selector with the following signature:
+
+```js
+memoizedSelector( source: Object, ...args: mixed ): mixed
+```
+
+It's expected that the first argument to the memoized function is the source from which the selector operates. It is ignored when considering whether the argument result has already been cached.
+
 ## Motivation
 
 While designed specifically for use with [Redux](http://redux.js.org/), Rememo is a simple pattern for efficiently deriving values from any immutable data object. Rememo takes advantage of Redux's [core principles](http://redux.js.org/docs/introduction/ThreePrinciples.html) of [data normalization](http://redux.js.org/docs/recipes/reducers/NormalizingStateShape.html) and [immutability](http://redux.js.org/docs/faq/ImmutableData.html). While tracking normalized data in a Redux store is beneficial for eliminating redudancy and reducing overall memory storage, in doing so it sacrifices conveniences that would otherwise make for a pleasant developer experience. It's for this reason that a selector pattern can be desirable. A selector is nothing more than a function which receives the current state and optionally a set of arguments to be used in determining the calculated value.
@@ -68,8 +84,6 @@ function getTasksByCompletion( state, isComplete ) {
 	return state.todo.filter( ( task ) => task.complete === isComplete );
 }
 ```
-
-_Aside: Here we assume this function will be passed the entire object state as its first argument. This convention is encouraged for all of your selectors because it is predictable, provides opportunity for refactoring, and enables selector composition._
 
 This works well enough and requires no additional tools, but you'll observe that the filtering we perform on the set of to-do tasks could become costly if we were to have thousands of tasks. And this is just a simple example; real-world use cases could involve far more expensive computation. Add to this the very real likelihood that our application might call this function many times even when our to-do set has not changed.
 

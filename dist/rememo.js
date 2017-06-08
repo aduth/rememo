@@ -968,6 +968,8 @@ var createSetNewCachedValue = exports.createSetNewCachedValue = function createS
 };
 });
 
+var utils_13 = utils.getMultiParamKey;
+
 var Cache_1 = createCommonjsModule(function (module, exports) {
 'use strict';
 
@@ -1189,6 +1191,8 @@ exports.default = Cache;
 module.exports = exports['default'];
 });
 
+var Cache = unwrapExports(Cache_1);
+
 var index = createCommonjsModule(function (module, exports) {
 'use strict';
 
@@ -1400,6 +1404,30 @@ function identity( value ) {
 }
 
 /**
+ * Creates a custom serializer for memoization.
+ *
+ * @param  {moize.Cache} cache Moize cache instance
+ * @return {Function}          Memoization serializer
+ */
+function createSerializer( cache ) {
+	/**
+	 * Serializes arguments for generating a cache key. This behaves more-or-
+	 * less identical to moize's default `getCacheKey` behavior, with the
+	 * exception that it ignores the first argument in generating the key.
+	 *
+	 * @param  {Array} args Memoized function arguments as array
+	 * @return {*}          Cache key
+	 */
+	return function( args ) {
+		if ( args.length > 2 ) {
+			return utils_13( cache, args.slice( 1 ) );
+		}
+
+		return args[ 1 ];
+	};
+}
+
+/**
  * Returns a memoized selector function. The getDependants function argument is
  * called before the memoized selector and is expected to return an immutable
  * reference or array of references on which the selector depends for computing
@@ -1414,8 +1442,17 @@ function identity( value ) {
  * @return {*}                      Selector return value
  */
 var rememo = function( selector, getDependants ) {
-	var memoizedSelector = memoize( selector ),
-		lastDependants;
+	var cache, memoizedSelector, lastDependants;
+
+	// We need to maintain our own cache in order to recreate the default cache
+	// serialization behavior using moize's `getMultiParamKey` utility
+	cache = new Cache();
+
+	memoizedSelector = memoize( selector, {
+		cache: cache,
+		serialize: true,
+		serializer: createSerializer( cache )
+	} );
 
 	if ( ! getDependants ) {
 		getDependants = identity;

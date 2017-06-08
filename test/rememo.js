@@ -63,6 +63,16 @@ describe( 'createSelector', () => {
 		assert.deepEqual( completed, selector( state, true ) );
 	} );
 
+	it( 'returns cached value on superfluous arguments', () => {
+		const state = getState();
+		let completed;
+		completed = getTasksByCompletion( state, true, true );
+		completed = getTasksByCompletion( state, true, true );
+
+		sinon.assert.calledOnce( selector );
+		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
 	it( 'returns the correct value of differing arguments', () => {
 		const state = getState();
 		const completed = getTasksByCompletion( state, true );
@@ -80,6 +90,17 @@ describe( 'createSelector', () => {
 		completed = getTasksByCompletion( state, true );
 
 		sinon.assert.calledTwice( selector );
+		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
+	it( 'returns cache even if target object has changed reference', () => {
+		let state = getState();
+		let completed;
+		completed = getTasksByCompletion( state, true );
+		state = Object.assign( {}, state, { other: true } );
+		completed = getTasksByCompletion( state, true );
+
+		sinon.assert.calledOnce( selector );
 		assert.deepEqual( completed, selector( state, true ) );
 	} );
 } );

@@ -1454,16 +1454,28 @@ var rememo = function( selector, getDependants ) {
 		serializer: createSerializer( cache )
 	} );
 
+	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {
 		getDependants = identity;
 	}
 
-	function callSelector() {
+	/**
+	 * The augmented selector call, considering first whether dependants have
+	 * changed before passing it to underlying memoize function.
+	 *
+	 * @param  {Object} source Source object for derivation
+	 * @param  {...*}   args   Additional arguments to pass to selector
+	 * @return {*}             Selector result
+	 */
+	function callSelector( /* state, ...args */ ) {
+		// Retrieve and normalize dependants as array
 		var dependants = getDependants.apply( null, arguments );
 		if ( ! Array.isArray( dependants ) ) {
 			dependants = [ dependants ];
 		}
 
+		// Perform shallow comparison on this pass with the last. If references
+		// have changed, destroy cache to recalculate memoized function result.
 		if ( lastDependants && ! index$1( dependants, lastDependants ) ) {
 			memoizedSelector.clear();
 		}

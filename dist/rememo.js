@@ -1451,7 +1451,12 @@ var rememo = function( selector, getDependants ) {
 	memoizedSelector = memoize( selector, {
 		cache: cache,
 		serialize: true,
-		serializer: createSerializer( cache )
+		serializer: createSerializer( cache ),
+
+		// While we never use moize's promise functionality, we must stub a
+		// replacement Promise library to prevent it from trying to access the
+		// Promise global, which is not available in all supported environments
+		promiseLibrary: function() {}
 	} );
 
 	// Use object source as dependant if getter not provided

@@ -1,3 +1,8 @@
+#### v1.2.0 (---)
+
+- Internal: Upgrade moize dependency to 3.x
+- Internal: Drop shallow-equal dependency (reuse home-grown solution for index-based shallow comparison in memoize arguments and selector dependants equality)
+
 #### v1.1.1 (2017-06-13)
 
 - Fix: Resolve an error in environments not supporting Promise, caused by

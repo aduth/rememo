@@ -10,14 +10,22 @@
     "es"
   ],
   "scripts": {
-    "pretest": "npm run build:cjs",
-    "test": "mocha",
+    "test": "BABEL_ENV=test mocha --compilers js:babel-register",
     "build:iife": "rollup -c rollup.iife.config.js",
     "postbuild:iife": "npm run uglify",
     "build:cjs": "rollup -c rollup.cjs.config.js",
     "build": "npm-run-all --parallel build:*",
     "uglify": "uglifyjs dist/rememo.js -c -m > dist/rememo.min.js",
     "prepublishOnly": "npm run build"
+  },
+  "babel": {
+    "env": {
+      "test": {
+        "plugins": [
+          "transform-es2015-modules-commonjs"
+        ]
+      }
+    }
   },
   "repository": {
     "type": "git",
@@ -41,10 +49,11 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "moize": "^2.3.3",
-    "shallow-equal": "^1.0.0"
+    "moize": "^3.3.0"
   },
   "devDependencies": {
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.24.1",
+    "babel-register": "^6.24.1",
     "eslint": "^3.19.0",
     "mocha": "^3.4.2",
     "npm-run-all": "^4.0.2",

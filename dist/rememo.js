@@ -1,69 +1,351 @@
 var rememo = (function () {
 'use strict';
 
-function unwrapExports (x) {
-	return x && x.__esModule ? x['default'] : x;
-}
+function _classCallCheck$1(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
+// utils
+/**
+ * @private
+ *
+ * @class ReactCacheKey
+ *
+ * @classdesc
+ * cache key used specifically for react components
+ */
 
-var constants = createCommonjsModule(function (module, exports) {
-'use strict';
+var ReactCacheKey = function () {
+  function ReactCacheKey(key) {
+    _classCallCheck$1(this, ReactCacheKey);
 
-exports.__esModule = true;
+    this.key = null;
 
+    this.key = {
+      context: this._getKeyPart(key[1]),
+      props: this._getKeyPart(key[0])
+    };
+
+    return this;
+  }
+
+  /**
+   * @function _getKeyPart
+   * @memberof ReactCacheKey
+   * @instance
+   *
+   * @description
+   * get the object of metadata for the key part
+   *
+   * @param {Object} keyPart the key part to get the metadata of
+   * @returns {Object} the metadata for the key part
+   */
+  ReactCacheKey.prototype._getKeyPart = function _getKeyPart(keyPart) {
+    var keys = keyPart ? Object.keys(keyPart) : [];
+
+    return {
+      keys: keys,
+      size: keys.length,
+      value: keyPart
+    };
+  };
+
+  /**
+   * @function _isPropShallowEqual
+   * @memberof ReactCacheKey
+   * @instance
+   *
+   * @description
+   * check if the prop value passed is equal to the key's value
+   *
+   * @param {Object} object the new key to test against the instance
+   * @param {Object} existing the key object stored in the instance
+   * @param {Array<string>} existing.keys the keys of the existing object
+   * @param {number} existing.size the length of the keys array
+   * @param {Object} value the value of the key part
+   * @returns {boolean} is the prop value shallow equal to the object
+   */
+
+
+  ReactCacheKey.prototype._isPropShallowEqual = function _isPropShallowEqual(object, existing) {
+    if (getKeyCount(object) !== existing.size) {
+      return false;
+    }
+
+    var index = 0,
+        key = void 0;
+
+    while (index < existing.size) {
+      key = existing.keys[index];
+
+      if (object[key] !== existing.value[key]) {
+        return false;
+      }
+
+      index++;
+    }
+
+    return true;
+  };
+
+  /**
+   * @function _isPropCustomEqual
+   * @memberof ReactCacheKey
+   * @instance
+   *
+   * @description
+   * check if the prop value passed is equal to the key's value
+   *
+   * @param {Object} object the new key to test against the instance
+   * @param {Object} existingObject the key stored in the instance
+   * @param {function} isEqual custom equality comparator
+   * @returns {boolean} are the objects equal based on the isEqual method passed
+   */
+
+
+  ReactCacheKey.prototype._isPropCustomEqual = function _isPropCustomEqual(object, existingObject, isEqual) {
+    return isEqual(object, existingObject);
+  };
+
+  /**
+   * @function matches
+   * @memberof ReactCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance
+   *
+   * @param {Array<*>} key the key to test
+   * @returns {boolean} does the key passed match that in the instance
+   */
+
+
+  ReactCacheKey.prototype.matches = function matches(key) {
+    return this._isPropShallowEqual(key[0], this.key.props) && this._isPropShallowEqual(key[1], this.key.context);
+  };
+
+  /**
+   * @function matchesCustom
+   * @memberof ReactCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance
+   *
+   * @param {Array<*>} key the key to test
+   * @param {function} isEqual method to check equality of keys
+   * @returns {boolean} does the key passed match that in the instance
+   */
+
+
+  ReactCacheKey.prototype.matchesCustom = function matchesCustom(key, isEqual) {
+    return this._isPropCustomEqual(key[0], this.key.props.value, isEqual) && this._isPropCustomEqual(key[1], this.key.context.value, isEqual);
+  };
+
+  return ReactCacheKey;
+}();
+
+function _classCallCheck$2(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
  * @private
  *
- * @constant {number} INFINITY
- * @default
+ * @class SerializedCacheKey
+ *
+ * @classdesc
+ * cache key used when the parameters should be serialized
  */
-var INFINITY = exports.INFINITY = Number.POSITIVE_INFINITY;
+var SerializedCacheKey = function () {
+  function SerializedCacheKey(key) {
+    _classCallCheck$2(this, SerializedCacheKey);
+
+    this.key = null;
+
+    this.key = key;
+
+    return this;
+  }
+
+  /**
+   * @function matches
+   * @memberof SerializedCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance
+   *W
+   * @param {Array<*>} key the key to test
+   * @returns {boolean} does the key passed match that in the instance
+   */
+  SerializedCacheKey.prototype.matches = function matches(key) {
+    return key === this.key;
+  };
+
+  /**
+   * @function matchesCustom
+   * @memberof SerializedCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance based on the custom equality function passed
+   *
+   * @param {Array<*>} key the key to test
+   * @param {function} isEqual method to compare equality of the keys
+   * @returns {boolean} does the key passed match that in the instance
+   */
+
+
+  SerializedCacheKey.prototype.matchesCustom = function matchesCustom(key, isEqual) {
+    return isEqual(key, this.key);
+  };
+
+  return SerializedCacheKey;
+}();
+
+function _classCallCheck$3(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
  * @private
  *
- * @constant {string} INVALID_FIRST_PARAMETER_ERROR
- * @default
+ * @class SingleParameterCacheKey
+ *
+ * @classdesc
+ * cache key used when there is a single standard parameter
  */
-// types
-var INVALID_FIRST_PARAMETER_ERROR = exports.INVALID_FIRST_PARAMETER_ERROR = 'You must pass either a function or an object of options as the first parameter to moize.';
+var SingleParameterCacheKey = function () {
+  function SingleParameterCacheKey(key) {
+    _classCallCheck$3(this, SingleParameterCacheKey);
+
+    this.isMultiParamKey = false;
+    this.key = null;
+
+    this.key = key[0];
+
+    return this;
+  }
+
+  /**
+   * @function matches
+   * @memberof SingleParameterCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance
+   *
+   * @param {Array<*>} key the key to test
+   * @param {boolean} isMultiParamKey is the key a multi-parameter key
+   * @returns {boolean} does the key passed match that in the instance
+   */
+  SingleParameterCacheKey.prototype.matches = function matches(key, isMultiParamKey) {
+    return !isMultiParamKey && key[0] === this.key;
+  };
+
+  /**
+   * @function matchesCustom
+   * @memberof SingleParameterCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance based on the custom equality function passed
+   *
+   * @param {Array<*>} key the key to test
+   * @param {boolean} isMultiParamKey is the key a multi-parameter key
+   * @param {function} isEqual method to compare equality of the keys
+   * @returns {boolean} does the key passed match that in the instance
+   */
+
+
+  SingleParameterCacheKey.prototype.matchesCustom = function matchesCustom(key, isMultiParamKey, isEqual) {
+    return !isMultiParamKey && isEqual(key[0], this.key);
+  };
+
+  return SingleParameterCacheKey;
+}();
+
+function _classCallCheck$4(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /**
  * @private
  *
- * @constant {string} NO_PROMISE_LIBRARY_EXISTS_ERROR_MESSAGE
- * @default
+ * @class MultipleParameterCacheKey
+ *
+ * @classdesc
+ * cache key used when there are multiple standard parameters
  */
-var NO_PROMISE_LIBRARY_EXISTS_ERROR_MESSAGE = exports.NO_PROMISE_LIBRARY_EXISTS_ERROR_MESSAGE = 'You have not specified a promiseLibrary, and it appears that your browser does not support ' + 'native promises. You can either assign the library you are using to the global Promise object, or pass ' + 'the library in options via the "promiseLibrary" property.';
+var MultipleParameterCacheKey = function () {
+  function MultipleParameterCacheKey(key) {
+    _classCallCheck$4(this, MultipleParameterCacheKey);
+
+    this.isMultiParamKey = true;
+    this.key = null;
+    this.size = 0;
+
+    this.key = key;
+    this.size = key.length;
+
+    return this;
+  }
+
+  /**
+   * @function matches
+   * @memberof MultipleParameterCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance
+   *
+   * @param {Array<*>} key the key to test
+   * @param {boolean} isMultiParamKey is the key a multi-parameter key
+   * @returns {boolean} does the key passed match that in the instance
+   */
+  MultipleParameterCacheKey.prototype.matches = function matches(key, isMultiParamKey) {
+    if (!isMultiParamKey || key.length !== this.size) {
+      return false;
+    }
+
+    var index = 0;
+
+    while (index < this.size) {
+      if (key[index] !== this.key[index]) {
+        return false;
+      }
+
+      index++;
+    }
+
+    return true;
+  };
+
+  /**
+   * @function matchesCustom
+   * @memberof SingleParameterCacheKey
+   * @instance
+   *
+   * @description
+   * does the passed key match the key in the instance based on the custom equality function passed
+   *
+   * @param {Array<*>} key the key to test
+   * @param {boolean} isMultiParamKey is the key a multi-parameter key
+   * @param {function} isEqual method to compare equality of the keys
+   * @returns {boolean} does the key passed match that in the instance
+   */
+
+
+  MultipleParameterCacheKey.prototype.matchesCustom = function matchesCustom(key, isMultiParamKey, isEqual) {
+    return isMultiParamKey && isEqual(key, this.key);
+  };
+
+  return MultipleParameterCacheKey;
+}();
+
+var _typeof$1 = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var FINITE_POSITIVE_INTEGER = /^[1-9]\d*$/;
 
 /**
  * @private
  *
- * @constant {IteratorDone} ITERATOR_DONE_OBJECT
+ * @constant {RegExp} FUNCTION_NAME_REGEXP
  */
-var ITERATOR_DONE_OBJECT = exports.ITERATOR_DONE_OBJECT = {
-  done: true
-};
-
-/**
- * @private
- *
- * @constant {string|symbol} CACHE_IDENTIFIER
- * @default
- */
-var CACHE_IDENTIFIER = exports.CACHE_IDENTIFIER = typeof Symbol === 'function' ? Symbol('isMoizeCache') : '__IS_MOIZE_CACHE__';
-
-/**
- * @private
- *
- * @constant {string} ARRAY_OBJECT_CLASS
- * @default
- */
-var ARRAY_OBJECT_CLASS = exports.ARRAY_OBJECT_CLASS = '[object Array]';
+var FUNCTION_NAME_REGEXP = /^\s*function\s+([^\(\s]*)\s*/;
 
 /**
  * @private
@@ -71,14 +353,64 @@ var ARRAY_OBJECT_CLASS = exports.ARRAY_OBJECT_CLASS = '[object Array]';
  * @constant {string} FUNCTION_TYPEOF
  * @default
  */
-var FUNCTION_TYPEOF = exports.FUNCTION_TYPEOF = 'function';
+var FUNCTION_TYPEOF = 'function';
 
 /**
  * @private
  *
- * @constant {RegExp} FUNCTION_NAME_REGEXP
+ * @constant {Array<Object>} GOTCHA_OBJECT_CLASSES
  */
-var FUNCTION_NAME_REGEXP = exports.FUNCTION_NAME_REGEXP = /^\s*function\s+([^\(\s]*)\s*/;
+var GOTCHA_OBJECT_CLASSES = [Boolean, Date, Number, RegExp, String];
+
+/**
+ * @private
+ *
+ * @constant {number} INFINITY
+ * @default
+ */
+var INFINITY = Number.POSITIVE_INFINITY;
+
+/**
+ * @private
+ *
+ * @constant {string} INVALID_FIRST_PARAMETER_ERROR
+ * @default
+ */
+var INVALID_FIRST_PARAMETER_ERROR = 'You must pass either a function or an object of options as the first parameter to moize.';
+
+/**
+ * @private
+ *
+ * @constant {string} INVALID_PROMISE_LIBRARY_ERROR
+ * @default
+ */
+var INVALID_PROMISE_LIBRARY_ERROR = 'The promiseLibrary passed must either be a function or an object with the resolve / reject methods.';
+
+/**
+ * @private
+ *
+ * @constant {function|undefined} NATIVE_PROMISE
+ */
+var NATIVE_PROMISE = (typeof Promise === 'undefined' ? 'undefined' : _typeof$1(Promise)) === FUNCTION_TYPEOF ? Promise : undefined;
+
+/**
+ * @private
+ *
+ * @constant {Object} DEFAULT_OPTIONS
+ */
+var DEFAULT_OPTIONS = {
+  equals: null,
+  isPromise: false,
+  isReact: false,
+  maxAge: INFINITY,
+  maxArgs: INFINITY,
+  maxSize: INFINITY,
+  promiseLibrary: NATIVE_PROMISE,
+  serialize: false,
+  serializeFunctions: false,
+  serializer: null,
+  transformArgs: null
+};
 
 /**
  * @private
@@ -86,56 +418,359 @@ var FUNCTION_NAME_REGEXP = exports.FUNCTION_NAME_REGEXP = /^\s*function\s+([^\(\
  * @constant {string} OBJECT_TYPEOF
  * @default
  */
-var OBJECT_TYPEOF = exports.OBJECT_TYPEOF = 'object';
-
-/**
- * @private
- *
- * @constant {Array<Object>} GOTCHA_OBJECT_CLASSES
- */
-var GOTCHA_OBJECT_CLASSES = exports.GOTCHA_OBJECT_CLASSES = [Boolean, Date, Number, RegExp, String];
+var OBJECT_TYPEOF = 'object';
 
 /**
  * @private
  *
  * @constant {Array<string>} STATIC_PROPERTIES_TO_PASS
  */
-var STATIC_PROPERTIES_TO_PASS = exports.STATIC_PROPERTIES_TO_PASS = ['contextTypes', 'defaultProps', 'propTypes'];
+var STATIC_PROPERTIES_TO_PASS = ['contextTypes', 'defaultProps', 'propTypes'];
 
 /**
  * @private
  *
- * @constant {number} STATIC_PROPERTIES_TO_PASS_LENGTH
+ * @constant {{isPromise: true}} PROMISE_OPTIONS
  */
-var STATIC_PROPERTIES_TO_PASS_LENGTH = exports.STATIC_PROPERTIES_TO_PASS_LENGTH = STATIC_PROPERTIES_TO_PASS.length;
-});
+var PROMISE_OPTIONS = {
+  isPromise: true
+};
 
-var utils = createCommonjsModule(function (module, exports) {
-'use strict';
+/**
+ * @private
+ *
+ * @constant {{maxArgs: number, serialize: boolean, serializeFunctions: boolean}} REACT_OPTIONS
+ */
+var REACT_OPTIONS = {
+  isReact: true
+};
 
-exports.__esModule = true;
-exports.createSetNewCachedValue = exports.createPromiseResolver = exports.createPromiseRejecter = exports.createSetExpirationOfCache = exports.createGetCacheKey = exports.getSerializerFunction = exports.createArgumentSerializer = exports.getStringifiedArgument = exports.stringify = exports.getIndexOfKey = exports.isFiniteAndPositive = exports.createAddPropertiesToFunction = exports.getMultiParamKey = exports.isKeyShallowEqualWithArgs = exports.deleteItemFromCache = exports.decycle = exports.customReplacer = exports.isValueObjectOrArray = exports.isPlainObject = exports.isFunction = exports.isComplexObject = exports.isArray = exports.isArrayFallback = exports.getFunctionName = exports.getFunctionNameViaRegexp = exports.createPluckFromInstanceList = exports.createCurriableOptionMethod = exports.isCache = exports.unshift = exports.splice = exports.every = exports.compose = exports.addStaticPropertiesToFunction = exports.toString = exports.keys = exports.jsonStringify = undefined;
+/**
+ * @private
+ *
+ * @constant {{serialize: boolean}} SERIALIZE_OPTIONS
+ */
+var SERIALIZE_OPTIONS = {
+  serialize: true
+};
+
+// cache
+// types
+
+
+// utils
+/**
+ * @private
+ *
+ * @function customReplacer
+ *
+ * @description
+ * custom replacer for the stringify function
+ *
+ * @param {string} key key in json object
+ * @param {*} value value in json object
+ * @returns {*} if function then toString of it, else the value itself
+ */
+var customReplacer = function customReplacer(key, value) {
+  return isFunction(value) ? '' + value : value;
+};
+
+/**
+ * @private
+ *
+ * @function decycle
+ *
+ * @description
+ * ES2015-ified version of cycle.decyle
+ *
+ * @param {*} object object to stringify
+ * @returns {string} stringified value of object
+ */
+var decycle = function decycle(object) {
+  var cache = new Cache();
+
+  /**
+   * @private
+   *
+   * @function coalesceCircularReferences
+   *
+   * @description
+   * recursive method to replace any circular references with a placeholder
+   *
+   * @param {*} value value in object to decycle
+   * @param {string} path path to reference
+   * @returns {*} clean value
+   */
+  var coalesceCircularReferences = function coalesceCircularReferences(value, path) {
+    if (!isValueObjectOrArray(value)) {
+      return value;
+    }
+
+    if (cache.has(value)) {
+      return {
+        $ref: cache.get(value)
+      };
+    }
+
+    cache.add(value, path);
+
+    if (Array.isArray(value)) {
+      return value.map(function (item, itemIndex) {
+        return coalesceCircularReferences(item, path + '[' + itemIndex + ']');
+      });
+    }
+
+    return Object.keys(value).reduce(function (object, name) {
+      object[name] = coalesceCircularReferences(value[name], path + '[' + JSON.stringify(name) + ']');
+
+      return object;
+    }, {});
+  };
+
+  return coalesceCircularReferences(object, '$');
+};
+
+/**
+ * @private
+ *
+ * @function stringify
+ *
+ * @description
+ * stringify with a custom replacer if circular, else use standard JSON.stringify
+ *
+ * @param {*} value value to stringify
+ * @param {function} [replacer] replacer to used in stringification
+ * @returns {string} the stringified version of value
+ */
+var stringify = function stringify(value, replacer) {
+  try {
+    return JSON.stringify(value, replacer);
+  } catch (exception) {
+    return JSON.stringify(decycle(value), replacer);
+  }
+};
+
+/**
+ * @private
+ *
+ * @function getStringifiedArgument
+ *
+ * @description
+ * get the stringified version of the argument passed
+ *
+ * @param {*} arg argument to stringify
+ * @param {function} [replacer] replacer to used in stringification
+ * @returns {string}
+ */
+var getStringifiedArgument = function getStringifiedArgument(arg, replacer) {
+  return isComplexObject(arg) || isFunction(arg) ? stringify(arg, replacer) : arg;
+};
+
+/**
+ * @private
+ *
+ * @function createArgumentSerializer
+ *
+ * @description
+ * create the internal argument serializer based on the options passed
+ *
+ * @param {boolean} serializeFunctions should functions be included in the serialization
+ * @param {number} maxArgs the cap on the number of arguments used in serialization
+ * @returns {function(...Array<*>): string} argument serialization method
+ */
+var createArgumentSerializer = function createArgumentSerializer(_ref) {
+  var maxArgs = _ref.maxArgs,
+      serializeFunctions = _ref.serializeFunctions;
+
+  var replacer = serializeFunctions ? customReplacer : null;
+  var hasMaxArgs = isFiniteAndPositiveInteger(maxArgs);
+
+  return function (args) {
+    var length = hasMaxArgs ? maxArgs : args.length;
+
+    var index = -1,
+        key = '|',
+        value = void 0;
+
+    while (++index < length) {
+      value = getStringifiedArgument(args[index], replacer);
+
+      if (value) {
+        key += value + '|';
+      }
+    }
+
+    return key;
+  };
+};
+
+/**
+ * @private
+ *
+ * @function getSerializerFunction
+ *
+ * @description
+ * based on the options passed, either use the serializer passed or generate the internal one
+ *
+ * @param {Options} options the options passed to the moized function
+ * @returns {function} the function to use in serializing the arguments
+ */
+var getSerializerFunction = function getSerializerFunction(options) {
+  return isFunction(options.serializer) ? options.serializer : createArgumentSerializer(options);
+};
+
+var _extends$1 = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 // cache
-
-
+// cache key
 // constants
-
-
-
-
-var _Cache2 = _interopRequireDefault(Cache_1);
-
-
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+// serialize
 // types
-var jsonStringify = exports.jsonStringify = JSON.stringify;
-var keys = exports.keys = Object.keys;
-var toString = exports.toString = Object.prototype.toString;
+
+
+/**
+ * @private
+ *
+ * @function isComplexObject
+ *
+ * @description
+ * is the object passed a complex object
+ *
+ * @param {*} object object to test if it is complex
+ * @returns {boolean} is it a complex object
+ */
+var isComplexObject = function isComplexObject(object) {
+  return !!object && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === OBJECT_TYPEOF;
+};
+
+/**
+ * @private
+ *
+ * @function isFiniteAndPositiveInteger
+ *
+ * @description
+ * is the number passed an integer that is finite and positive
+ *
+ * @param {number} number number to test for finiteness and positivity
+ * @returns {boolean} is the number finite and positive
+ */
+var isFiniteAndPositiveInteger = function isFiniteAndPositiveInteger(number) {
+  return FINITE_POSITIVE_INTEGER.test('' + number);
+};
+
+/**
+ * @private
+ *
+ * @function isFunction
+ *
+ * @description
+ * is the object passed a function or not
+ *
+ * @param {*} object object to test
+ * @returns {boolean} is it a function
+ */
+var isFunction = function isFunction(object) {
+  return (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === FUNCTION_TYPEOF;
+};
+
+/**
+ * @private
+ *
+ * @function isMoized
+ *
+ * @description
+ * is the function passed a moized function or not
+ *
+ * @param {*} fn the function to get if moize
+ * @returns {boolean} is the function moized or not
+ */
+var isMoized = function isMoized(fn) {
+  return isFunction(fn) && !!fn.isMoized;
+};
+
+/**
+ * @private
+ *
+ * @function isPlainObject
+ *
+ * @description
+ * is the object passed a plain object or not
+ *
+ * @param {*} object object to test
+ * @returns {boolean} is it a plain object
+ */
+var isPlainObject = function isPlainObject(object) {
+  return isComplexObject(object) && object.constructor === Object;
+};
+
+/**
+ * @private
+ *
+ * @function isValueObjectOrArray
+ *
+ * @description
+ * check if the object is actually an object or array
+ *
+ * @param {*} object object to test
+ * @returns {boolean} is the object an object or array
+ */
+var isValueObjectOrArray = function isValueObjectOrArray(object) {
+  if (!isComplexObject(object)) {
+    return false;
+  }
+
+  var index = 0;
+
+  while (index < GOTCHA_OBJECT_CLASSES.length) {
+    if (object instanceof GOTCHA_OBJECT_CLASSES[index]) {
+      return false;
+    }
+
+    index++;
+  }
+
+  return true;
+};
+
+/**
+ * @private
+ *
+ * @function take
+ *
+ * @description
+ * take the first N number of items from the array (faster than slice)
+ *
+ * @param {number} size the number of items to take
+ * @returns {function(Array<*>): Array<*>} the shortened array
+ */
+var take = function take(size) {
+  return function (array) {
+    if (size >= array.length) {
+      return array;
+    }
+
+    switch (size) {
+      case 1:
+        return [array[0]];
+
+      case 2:
+        return [array[0], array[1]];
+
+      case 3:
+        return [array[0], array[1], array[2]];
+
+      case 4:
+        return [array[0], array[1], array[2], array[3]];
+
+      case 5:
+        return [array[0], array[1], array[2], array[3], array[4]];
+    }
+
+    return array.slice(0, size);
+  };
+};
 
 /**
  * @private
@@ -149,12 +784,12 @@ var toString = exports.toString = Object.prototype.toString;
  * @param {function} memoizedFn the higher-order memoized function
  * @returns {function} memoizedFn with static properties added
  */
-var addStaticPropertiesToFunction = exports.addStaticPropertiesToFunction = function addStaticPropertiesToFunction(originalFunction, memoizedFn) {
-  var index = constants.STATIC_PROPERTIES_TO_PASS_LENGTH,
+var addStaticPropertiesToFunction = function addStaticPropertiesToFunction(originalFunction, memoizedFn) {
+  var index = STATIC_PROPERTIES_TO_PASS.length,
       property = void 0;
 
   while (index--) {
-    property = constants.STATIC_PROPERTIES_TO_PASS[index];
+    property = STATIC_PROPERTIES_TO_PASS[index];
 
     if (originalFunction[property]) {
       memoizedFn[property] = originalFunction[property];
@@ -175,7 +810,7 @@ var addStaticPropertiesToFunction = exports.addStaticPropertiesToFunction = func
  * @param {...Array<function>} functions the functions to compose
  * @returns {function(...Array<*>): *} the composed function
  */
-var compose = exports.compose = function compose() {
+var compose = function compose() {
   for (var _len = arguments.length, functions = Array(_len), _key = 0; _key < _len; _key++) {
     functions[_key] = arguments[_key];
   }
@@ -190,29 +825,570 @@ var compose = exports.compose = function compose() {
 /**
  * @private
  *
- * @function every
+ * @function createCurriableOptionMethod
  *
  * @description
- * faster version of determining every item in array matches fn check
+ * create a method that will curry moize with the option + value passed
  *
- * @param {Array<*>} array array to test
- * @param {function} fn fn to test each item against
- * @returns {boolean} do all values match
+ * @param {function} fn the method to call
+ * @param {string} option the name of the option to apply
+ * @param {*} value the value to assign to option
+ * @returns {function} the moizer with the option pre-applied
  */
-var every = exports.every = function every(array, fn) {
-  if (!array.length) {
-    return true;
-  }
+var createCurriableOptionMethod = function createCurriableOptionMethod(fn, option) {
+  return function (value) {
+    var _fn;
 
-  var index = array.length;
+    return fn((_fn = {}, _fn[option] = value, _fn));
+  };
+};
 
-  while (index--) {
-    if (!fn(array[index], index)) {
-      return false;
+/**
+ * @private
+ *
+ * @function createFindIndex
+ *
+ * @description
+ * create a findIndex method based on the startingIndex passed
+ *
+ * @param {number} startingIndex the index to start in the find method returned
+ * @returns {function(Array<ListItem>, *): number} the findIndex method
+ */
+var createFindIndex = function createFindIndex(startingIndex) {
+  // eslint-disable-line no-use-before-define
+  return function (list, key) {
+    var index = startingIndex;
+
+    while (index < list.length) {
+      if (key === list[index].key) {
+        return index;
+      }
+
+      index++;
     }
+
+    return -1;
+  };
+};
+
+/**
+ * @private
+ *
+ * @function createPluckFromInstanceList
+ *
+ * @description
+ * get a property from the list on the cache
+ *
+ * @param {{list: Array<Object>}} cache cache whose list to map over
+ * @param {string} key key to pluck from list
+ * @returns {Array<*>} array of values plucked at key
+ */
+var createPluckFromInstanceList = function createPluckFromInstanceList(cache, key) {
+  return function () {
+    return cache.list.map(function (item) {
+      return item[key];
+    });
+  };
+};
+
+/**
+ * @private
+ *
+ * @function createPromiseRejecter
+ *
+ * @description
+ * create method that will reject the promise and delete the key from cache
+ *
+ * @param {Cache} cache cache to update
+ * @param {*} key key to delete from cache
+ * @param {function} promiseLibrary the promise library used
+ * @returns {function} the rejecter function for the promise
+ */
+var createPromiseRejecter = function createPromiseRejecter(cache, key, _ref) {
+  var promiseLibrary = _ref.promiseLibrary;
+
+  return function (exception) {
+    cache.remove(key);
+
+    return promiseLibrary.reject(exception);
+  };
+};
+
+/**
+ * @private
+ *
+ * @function createPromiseResolver
+ *
+ * @description
+ * create method that will resolve the promise and update the key in cache
+ *
+ * @param {Cache} cache cache to update
+ * @param {*} key key to update in cache
+ * @param {boolean} hasMaxAge should the cache expire after some time
+ * @param {number} maxAge the age after which the cache will be expired
+ * @param {function} promiseLibrary the promise library used
+ * @returns {function} the resolver function for the promise
+ */
+var createPromiseResolver = function createPromiseResolver(cache, key, hasMaxAge, _ref2) {
+  var maxAge = _ref2.maxAge,
+      promiseLibrary = _ref2.promiseLibrary;
+
+  return function (resolvedValue) {
+    cache.update(key, promiseLibrary.resolve(resolvedValue));
+
+    if (hasMaxAge) {
+      cache.expireAfter(key, maxAge);
+    }
+
+    return resolvedValue;
+  };
+};
+
+/**
+ * @private
+ *
+ * @function findIndex
+ *
+ * @description
+ * find the index of the key starting at the first index
+ *
+ * @param {Array<ListItem>} list the list to find the key in
+ * @param {*} key the key to test against
+ * @returns {number} the index of the matching key, or -1
+ */
+var findIndex = createFindIndex(0);
+
+/**
+ * @private
+ *
+ * @function findIndexAfterFirst
+ *
+ * @description
+ * find the index of the key starting at the second index
+ *
+ * @param {Array<ListItem>} list the list to find the key in
+ * @param {*} key the key to test against
+ * @returns {number} the index of the matching key, or -1
+ */
+var findIndexAfterFirst = createFindIndex(1);
+
+/**
+ * @private
+ *
+ * @function getDefaultedOptions
+ *
+ * @description
+ * get the options coalesced to their defaults
+ *
+ * @param {Object} options the options passed to the moize method
+ * @returns {Options} the coalesced options object
+ */
+var getDefaultedOptions = function getDefaultedOptions(options) {
+  var coalescedOptions = _extends$1({}, DEFAULT_OPTIONS, options);
+
+  if (coalescedOptions.serialize) {
+    coalescedOptions.serializer = getSerializerFunction(coalescedOptions);
   }
 
-  return true;
+  return coalescedOptions;
+};
+
+/**
+ * @private
+ *
+ * @function getFunctionNameViaRegexp
+ *
+ * @description
+ * use regexp match on stringified function to get the function name
+ *
+ * @param {function} fn function to get the name of
+ * @returns {string} function name
+ */
+var getFunctionNameViaRegexp = function getFunctionNameViaRegexp(fn) {
+  var match = fn.toString().match(FUNCTION_NAME_REGEXP);
+
+  return match ? match[1] : '';
+};
+
+/**
+ * @private
+ *
+ * @function getFunctionName
+ *
+ * @description
+ * get the function name, either from modern property or regexp match,
+ * falling back to generic string
+ *
+ * @param {function} fn function to get the name of
+ * @returns {string} function name
+ */
+var getFunctionName = function getFunctionName(fn) {
+  return fn.displayName || fn.name || getFunctionNameViaRegexp(fn) || FUNCTION_TYPEOF;
+};
+
+/**
+ * @private
+ *
+ * @function getKeyCount
+ *
+ * @description
+ * get the count of keys in the object (faster than Object.keys().length)
+ * 
+ * @param {Object} object the object to get the key count of
+ * @returns {number} the count of keys
+ */
+var getKeyCount = function getKeyCount(object) {
+  var counter = 0;
+
+  for (var ignored in object) {
+    counter++;
+  }
+
+  return counter;
+};
+
+/**
+ * @private
+ *
+ * @function getReactCacheKey
+ *
+ * @description
+ * get the cache key specific to react
+ *
+ * @param {Cache} cache the cache to find a potential matching key in
+ * @param {*} key the key to try to find a match of, or turn into a new ReactCacheKey
+ * @returns {ReactCacheKey} the matching cache key, or a new one
+ */
+var getReactCacheKey = function getReactCacheKey(cache, key) {
+  // $FlowIgnore if cache has size, the key exists
+  if (cache.size && cache.lastItem.key.matches(key)) {
+    // $FlowIgnore if the key matches, the key exists
+    return cache.lastItem.key;
+  }
+
+  var index = 1;
+
+  while (index < cache.size) {
+    // $FlowIgnore if cache has size, the key exists
+    if (cache.list[index].key.matches(key)) {
+      // $FlowIgnore if the key matches, the key exists
+      return cache.list[index].key;
+    }
+
+    index++;
+  }
+
+  return new ReactCacheKey(key);
+};
+
+/**
+ * @private
+ *
+ * @function getReactCacheKey
+ *
+ * @description
+ * get the cache key specific to react
+ *
+ * @param {Cache} cache the cache to find a potential matching key in
+ * @param {*} key the key to try to find a match of, or turn into a new ReactCacheKey
+ * @param {Options} options the options passed to the moized method
+ * @returns {ReactCacheKey} the matching cache key, or a new one
+ */
+var getReactCacheKeyCustomEquals = function getReactCacheKeyCustomEquals(cache, key, options) {
+  // $FlowIgnore if cache has size, the key exists
+  if (cache.size && cache.lastItem.key.matchesCustom(key, options.equals)) {
+    // $FlowIgnore if the key matches, the key exists
+    return cache.lastItem.key;
+  }
+
+  var index = 1;
+
+  while (index < cache.size) {
+    // $FlowIgnore if cache has size, the key exists
+    if (cache.list[index].key.matchesCustom(key, options.equals)) {
+      // $FlowIgnore if the key matches, the key exists
+      return cache.list[index].key;
+    }
+
+    index++;
+  }
+
+  return new ReactCacheKey(key);
+};
+
+/**
+ * @private
+ *
+ * @function getSerializedCacheKey
+ *
+ * @description
+ * get the cache key specific to serialized methods
+ *
+ * @param {Cache} cache the cache to find a potential matching key in
+ * @param {*} key the key to try to find a match of, or turn into a new SerializedCacheKey
+ * @param {Options} options the options passed to the moized method
+ * @returns {SerializedCacheKey} the matching cache key, or a new one
+ */
+var getSerializedCacheKey = function getSerializedCacheKey(cache, key) {
+  // $FlowIgnore if cache has size, the key exists
+  if (cache.size && cache.lastItem.key.matches(key)) {
+    // $FlowIgnore if the key matches, the key exists
+    return cache.lastItem.key;
+  }
+
+  var index = 1;
+
+  while (index < cache.size) {
+    // $FlowIgnore if cache has size, the key exists
+    if (cache.list[index].key.matches(key)) {
+      // $FlowIgnore if the key matches, the key exists
+      return cache.list[index].key;
+    }
+
+    index++;
+  }
+
+  return new SerializedCacheKey(key);
+};
+
+/**
+ * @private
+ *
+ * @function getSerializedCacheKeyCustomEquals
+ *
+ * @description
+ * get the cache key specific to serialized methods
+ *
+ * @param {Cache} cache the cache to find a potential matching key in
+ * @param {*} key the key to try to find a match of, or turn into a new SerializedCacheKey
+ * @param {Options} options the options passed to the moized method
+ * @returns {SerializedCacheKey} the matching cache key, or a new one
+ */
+var getSerializedCacheKeyCustomEquals = function getSerializedCacheKeyCustomEquals(cache, key, options) {
+  if (cache.size &&
+  // $FlowIgnore if cache has size, the key exists
+  cache.lastItem.key.matchesCustom(key, options.equals)) {
+    // $FlowIgnore if the key matches, the key exists
+    return cache.lastItem.key;
+  }
+
+  var index = 1;
+
+  while (index < cache.size) {
+    // $FlowIgnore if cache has size, the key exists
+    if (cache.list[index].key.matchesCustom(key, options.equals)) {
+      // $FlowIgnore if the key matches, the key exists
+      return cache.list[index].key;
+    }
+
+    index++;
+  }
+
+  return new SerializedCacheKey(key);
+};
+
+/**
+ * @private
+ *
+ * @function getStandardCacheKey
+ *
+ * @description
+ * get the cache key for standard parameters, either single or multiple
+ *
+ * @param {Cache} cache the cache to find a potential matching key in
+ * @param {*} key the key to try to find a match of, or turn into a new Multiple / SingleParameterCacheKey
+ * @returns {StandardCacheKey} the matching cache key, or a new one
+ */
+var getStandardCacheKey = function getStandardCacheKey(cache, key) {
+  var isMultiParamKey = key.length > 1;
+
+  // $FlowIgnore if cache has size, the key exists
+  if (cache.size && cache.lastItem.key.matches(key, isMultiParamKey)) {
+    // $FlowIgnore if the key matches, the key exists
+    return cache.lastItem.key;
+  }
+
+  var index = 1;
+
+  while (index < cache.size) {
+    // $FlowIgnore if cache has size, the key exists
+    if (cache.list[index].key.matches(key, isMultiParamKey)) {
+      // $FlowIgnore if the key matches, the key exists
+      return cache.list[index].key;
+    }
+
+    index++;
+  }
+
+  return isMultiParamKey ? new MultipleParameterCacheKey(key) : new SingleParameterCacheKey(key);
+};
+
+/**
+ * @private
+ *
+ * @function getStandardCacheKeyCustomEquals
+ *
+ * @description
+ * get the cache key for standard parameters, either single or multiple
+ *
+ * @param {Cache} cache the cache to find a potential matching key in
+ * @param {*} key the key to try to find a match of, or turn into a new Multiple / SingleParameterCacheKey
+ * @param {Options} options the options passed to the moized method
+ * @returns {StandardCacheKey} the matching cache key, or a new one
+ */
+var getStandardCacheKeyCustomEquals = function getStandardCacheKeyCustomEquals(cache, key, options) {
+  var isMultiParamKey = key.length > 1;
+
+  if (cache.size &&
+  // $FlowIgnore if cache has size, the key exists
+  cache.lastItem.key.matchesCustom(key, isMultiParamKey, options.equals)) {
+    // $FlowIgnore if the key matches, the key exists
+    return cache.lastItem.key;
+  }
+
+  var index = 1;
+
+  while (index < cache.size) {
+    if (
+    // $FlowIgnore if cache has size, the key exists
+    cache.list[index].key.matchesCustom(key, isMultiParamKey, options.equals)) {
+      // $FlowIgnore if the key matches, the key exists
+      return cache.list[index].key;
+    }
+
+    index++;
+  }
+
+  return isMultiParamKey ? new MultipleParameterCacheKey(key) : new SingleParameterCacheKey(key);
+};
+
+/**
+ * @private
+ *
+ * @function getGetCacheKeyMethod
+ *
+ * @description
+ * based on the options, get the getCacheKey method
+ *
+ * @param {Options} options the options passed to the moized method
+ * @returns {function(Cache, Array<*>): CacheKey} the cache key
+ */
+var getGetCacheKeyMethod = function getGetCacheKeyMethod(options) {
+  if (options.isReact) {
+    return options.equals ? getReactCacheKeyCustomEquals : getReactCacheKey;
+  }
+
+  if (options.serialize) {
+    return options.equals ? getSerializedCacheKeyCustomEquals : getSerializedCacheKey;
+  }
+
+  return options.equals ? getStandardCacheKeyCustomEquals : getStandardCacheKey;
+};
+
+/**
+ * @private
+ *
+ * @function createGetCacheKey
+ *
+ * @description
+ * create the method that will get the cache key based on the options passed to the moized method
+ *
+ * @param {Cache} cache the cache to get the key from
+ * @param {Options} options the options passed to the moized method
+ * @returns {function(*): CacheKey} the method that will get the cache key
+ */
+var createGetCacheKey = function createGetCacheKey(cache, options) {
+  var hasMaxArgs = isFiniteAndPositiveInteger(options.maxArgs);
+  var getCacheKeyMethod = getGetCacheKeyMethod(options);
+
+  var transform = options.transformArgs;
+
+  if (hasMaxArgs) {
+    transform = transform ? compose(transform, take(options.maxArgs)) : take(options.maxArgs);
+  }
+
+  if (options.serialize) {
+    transform = transform ? compose(options.serializer, transform) : options.serializer;
+  }
+
+  if (options.equals) {
+    if (transform) {
+      return function (key) {
+        // $FlowIgnore transform is a function
+        return getCacheKeyMethod(cache, transform(key), options);
+      };
+    }
+
+    return function (key) {
+      return getCacheKeyMethod(cache, key, options);
+    };
+  }
+
+  if (transform) {
+    return function (key) {
+      // $FlowIgnore transform is a function
+      return getCacheKeyMethod(cache, transform(key));
+    };
+  }
+
+  return function (key) {
+    return getCacheKeyMethod(cache, key);
+  };
+};
+
+/**
+ * @private
+ *
+ * @function createSetNewCachedValue
+ *
+ * @description
+ * assign the new value to the key in the functions cache and return the value
+ *
+ * @param {Cache} cache the cache to assign the value to at key
+ * @param {Options} options the options passed to the moize method
+ * @returns {function(function, *, *): *} value just stored in cache
+ */
+var createSetNewCachedValue = function createSetNewCachedValue(cache, options) {
+  var hasMaxAge = isFiniteAndPositiveInteger(options.maxAge);
+  var hasMaxSize = isFiniteAndPositiveInteger(options.maxSize);
+
+  var maxAge = options.maxAge,
+      maxSize = options.maxSize;
+
+
+  if (options.isPromise) {
+    if (!isFunction(options.promiseLibrary) && !isPlainObject(options.promiseLibrary)) {
+      throw new TypeError(INVALID_PROMISE_LIBRARY_ERROR);
+    }
+
+    return function (key, value) {
+      var promiseResolver = createPromiseResolver(cache, key, hasMaxAge, options);
+      var promiseRejecter = createPromiseRejecter(cache, key, options);
+      var handler = value.then(promiseResolver, promiseRejecter);
+
+      cache.add(key, handler);
+
+      if (hasMaxSize && cache.size > maxSize) {
+        cache.remove(cache.list[cache.list.length - 1].key);
+      }
+
+      return handler;
+    };
+  }
+
+  return function (key, value) {
+    cache.add(key, value);
+
+    if (hasMaxAge) {
+      cache.expireAfter(key, maxAge);
+    }
+
+    if (hasMaxSize && cache.size > maxSize) {
+      cache.remove(cache.list[cache.list.length - 1].key);
+    }
+
+    return value;
+  };
 };
 
 /**
@@ -227,7 +1403,7 @@ var every = exports.every = function every(array, fn) {
  * @param {number} startingIndex index to splice at
  * @returns {Array<*>} array minus the item removed
  */
-var splice = exports.splice = function splice(array, startingIndex) {
+var splice = function splice(array, startingIndex) {
   if (!array.length) {
     return array;
   }
@@ -255,7 +1431,7 @@ var splice = exports.splice = function splice(array, startingIndex) {
  * @param {*} item item to unshift into array
  * @returns {*} the item just added to the array
  */
-var unshift = exports.unshift = function unshift(array, item) {
+var unshift = function unshift(array, item) {
   var index = array.length;
 
   while (index--) {
@@ -268,348 +1444,25 @@ var unshift = exports.unshift = function unshift(array, item) {
 /**
  * @private
  *
- * @function isCache
- *
- * @description
- * is the object passed an instance of the native Cache implementation
- *
- * @param {*} object object to test
- * @returns {boolean} is the object an instance of Cache
- */
-var isCache = exports.isCache = function isCache(object) {
-  return !!object[constants.CACHE_IDENTIFIER];
-};
-
-/**
- * @private
- *
- * @function createCurriableOptionMethod
- *
- * @description
- * create a method that will curry moize with the option + value passed
- *
- * @param {function} fn the method to call
- * @param {string} option the name of the option to apply
- * @param {*} value the value to assign to option
- * @returns {function} the moizer with the option pre-applied
- */
-var createCurriableOptionMethod = exports.createCurriableOptionMethod = function createCurriableOptionMethod(fn, option) {
-  return function (value) {
-    var _fn;
-
-    return fn((_fn = {}, _fn[option] = value, _fn));
-  };
-};
-
-/**
- * @private
- *
- * @function createPluckFromInstanceList
- *
- * @description
- * get a property from the list on the cache
- *
- * @param {{list: Array<Object>}} cache cache whose list to map over
- * @param {string} key key to pluck from list
- * @returns {Array<*>} array of values plucked at key
- */
-var createPluckFromInstanceList = exports.createPluckFromInstanceList = function createPluckFromInstanceList(cache, key) {
-  return !isCache(cache) ? function () {} : function () {
-    return cache.list.map(function (item) {
-      return item[key];
-    });
-  };
-};
-
-/**
- * @private
- *
- * @function getFunctionNameViaRegexp
- *
- * @description
- * use regexp match on stringified function to get the function name
- *
- * @param {function} fn function to get the name of
- * @returns {string} function name
- */
-var getFunctionNameViaRegexp = exports.getFunctionNameViaRegexp = function getFunctionNameViaRegexp(fn) {
-  var match = fn.toString().match(constants.FUNCTION_NAME_REGEXP);
-
-  return match ? match[1] : '';
-};
-
-/**
- * @private
- *
- * @function getFunctionName
- *
- * @description
- * get the function name, either from modern property or regexp match,
- * falling back to generic string
- *
- * @param {function} fn function to get the name of
- * @returns {string} function name
- */
-var getFunctionName = exports.getFunctionName = function getFunctionName(fn) {
-  return fn.displayName || fn.name || getFunctionNameViaRegexp(fn) || constants.FUNCTION_TYPEOF;
-};
-
-/**
- * @private
- *
- * @function isArrayFallback
- *
- * @description
- * provide fallback for native Array.isArray test
- *
- * @param {*} object object to test if it is an array
- * @returns {boolean} is the object passed an array or not
- */
-var isArrayFallback = exports.isArrayFallback = function isArrayFallback(object) {
-  return toString.call(object) === constants.ARRAY_OBJECT_CLASS;
-};
-
-/**
- * @private
- *
- * @function isArray
- *
- * @description
- * isArray function to use internally, either the native one or fallback
- *
- * @param {*} object object to test if it is an array
- * @returns {boolean} is the object passed an array or not
- */
-var isArray = exports.isArray = Array.isArray || isArrayFallback;
-
-/**
- * @private
- *
- * @function isComplexObject
- *
- * @description
- * is the object passed a complex object
- *
- * @param {*} object object to test if it is complex
- * @returns {boolean} is it a complex object
- */
-var isComplexObject = exports.isComplexObject = function isComplexObject(object) {
-  return !!object && (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === constants.OBJECT_TYPEOF;
-};
-
-/**
- * @private
- *
- * @function isFunction
- *
- * @description
- * is the object passed a function or not
- *
- * @param {*} object object to test
- * @returns {boolean} is it a function
- */
-var isFunction = exports.isFunction = function isFunction(object) {
-  return (typeof object === 'undefined' ? 'undefined' : _typeof(object)) === constants.FUNCTION_TYPEOF;
-};
-
-/**
- * @private
- *
- * @function isPlainObject
- *
- * @description
- * is the object passed a plain object or not
- *
- * @param {*} object object to test
- * @returns {boolean} is it a plain object
- */
-var isPlainObject = exports.isPlainObject = function isPlainObject(object) {
-  return isComplexObject(object) && object.constructor === Object;
-};
-
-/**
- * @private
- *
- * @function isValueObjectOrArray
- *
- * @description
- * check if the object is actually an object or array
- *
- * @param {*} object object to test
- * @returns {boolean} is the object an object or array
- */
-var isValueObjectOrArray = exports.isValueObjectOrArray = function isValueObjectOrArray(object) {
-  return isComplexObject(object) && every(constants.GOTCHA_OBJECT_CLASSES, function (Class) {
-    return !(object instanceof Class);
-  });
-};
-
-/**
- * @private
- *
- * @function customReplacer
- *
- * @description
- * custom replacer for the stringify function
- *
- * @param {string} key key in json object
- * @param {*} value value in json object
- * @returns {*} if function then toString of it, else the value itself
- */
-var customReplacer = exports.customReplacer = function customReplacer(key, value) {
-  return isFunction(value) ? '' + value : value;
-};
-
-/**
- * @private
- *
- * @function decycle
- *
- * @description
- * ES2015-ified version of cycle.decyle
- *
- * @param {*} object object to stringify
- * @returns {string} stringified value of object
- */
-var decycle = exports.decycle = function decycle(object) {
-  var cache = new _Cache2.default();
-
-  /**
-   * @private
-   *
-   * @function coalesceCircularReferences
-   *
-   * @description
-   * recursive method to replace any circular references with a placeholder
-   *
-   * @param {*} value value in object to decycle
-   * @param {string} path path to reference
-   * @returns {*} clean value
-   */
-  var coalesceCircularReferences = function coalesceCircularReferences(value, path) {
-    if (!isValueObjectOrArray(value)) {
-      return value;
-    }
-
-    if (cache.has(value)) {
-      return {
-        $ref: cache.get(value)
-      };
-    }
-
-    cache.set(value, path);
-
-    if (isArray(value)) {
-      return value.map(function (item, itemIndex) {
-        return coalesceCircularReferences(item, path + '[' + itemIndex + ']');
-      });
-    }
-
-    return keys(value).reduce(function (object, name) {
-      object[name] = coalesceCircularReferences(value[name], path + '[' + JSON.stringify(name) + ']');
-
-      return object;
-    }, {});
-  };
-
-  return coalesceCircularReferences(object, '$');
-};
-
-/**
- * @private
- *
- * @function deleteItemFromCache
- *
- * @description
- * remove an item from cache
- *
- * @param {Cache} cache caching mechanism for method
- * @param {*} key key to delete
- * @param {boolean} [isKeyLastItem=false] should the key be the last item in the LRU list
- */
-var deleteItemFromCache = exports.deleteItemFromCache = function deleteItemFromCache(cache, key) {
-  var isKeyLastItem = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-  if (isKeyLastItem && isCache(cache)) {
-    key = cache.list[cache.list.length - 1].key;
-  }
-
-  if (cache.has(key)) {
-    cache.delete(key);
-  }
-};
-
-/**
- * @private
- *
- * @function isKeyShallowEqualWithArgs
- *
- * @description
- * is the value passed shallowly equal with the args
- *
- * @param {*} value the value to compare
- * @param {Array<*>} args the args to test
- * @returns {boolean} are the args shallow equal to the value
- */
-var isKeyShallowEqualWithArgs = exports.isKeyShallowEqualWithArgs = function isKeyShallowEqualWithArgs(value, args) {
-  return value.isMultiParamKey && value.key.length === args.length && every(args, function (arg, index) {
-    return arg === value.key[index];
-  });
-};
-
-/**
- * @private
- *
- * @function getMultiParamKey
- *
- * @description
- * get the multi-parameter key that either matches a current one in state or is the same as the one passed
- *
- * @param {Cache} cache cache to compare args to
- * @param {Array<*>} args arguments passed to moize get key
- * @returns {Array<*>} either a matching key in cache or the same key as the one passed
- */
-var getMultiParamKey = exports.getMultiParamKey = function getMultiParamKey(cache, args) {
-  if (cache.lastItem && isKeyShallowEqualWithArgs(cache.lastItem, args)) {
-    return cache.lastItem.key;
-  }
-
-  var iterator = cache.getKeyIterator();
-
-  var iteration = void 0;
-
-  while ((iteration = iterator.next()) && !iteration.done) {
-    if (isKeyShallowEqualWithArgs(iteration, args)) {
-      return iteration.key;
-    }
-  }
-
-  // $FlowIgnore ok to add key to array object
-  args.isMultiParamKey = true;
-
-  return args;
-};
-
-/**
- * @private
- *
  * @function createAddPropertiesToFunction
  *
  * @description
- * add the caching mechanism to the function passed and return the function
+ * add the static properties to the moized function
  *
- * @param {Cache} cache caching mechanism that has get / set / has methods
- * @param {function} originalFunction function to get the name of
- * @param {Options} options the options for the given memoized function
- * @returns {function(function): function} method that has cache mechanism added to it
+ * @param {Cache} cache the cache for the moized function
+ * @param {function} originalFunction the function to be moized
+ * @param {Options} options the options passed to the moize method
+ * @returns {function(function): function} the method which will add the static properties
  */
-var createAddPropertiesToFunction = exports.createAddPropertiesToFunction = function createAddPropertiesToFunction(cache, originalFunction, options) {
-  return function (fn) {
-    fn.cache = cache;
-    fn.displayName = 'Memoized(' + getFunctionName(originalFunction) + ')';
-    fn.isMemoized = true;
-    fn.options = options;
-    fn.originalFunction = originalFunction;
+var createAddPropertiesToFunction = function createAddPropertiesToFunction(cache, originalFunction, options) {
+  var getCacheKey = createGetCacheKey(cache, options);
+
+  return function (moizedFunction) {
+    moizedFunction.cache = cache;
+    moizedFunction.displayName = 'moize(' + getFunctionName(originalFunction) + ')';
+    moizedFunction.isMoized = true;
+    moizedFunction.options = options;
+    moizedFunction.originalFunction = originalFunction;
 
     /**
      * @private
@@ -619,12 +1472,14 @@ var createAddPropertiesToFunction = exports.createAddPropertiesToFunction = func
      * @description
      * manually add an item to cache if the key does not already exist
      *
-     * @param {*} key key to use in cache
+     * @param {Array<any>} key key to use in cache
      * @param {*} value value to assign to key
      */
-    fn.add = function (key, value) {
-      if (!cache.has(key) && getMultiParamKey(cache, key) === key) {
-        cache.set(key, value);
+    moizedFunction.add = function (key, value) {
+      var internalKey = getCacheKey(key);
+
+      if (!cache.has(internalKey)) {
+        cache.add(internalKey, value);
       }
     };
 
@@ -636,28 +1491,23 @@ var createAddPropertiesToFunction = exports.createAddPropertiesToFunction = func
      * @description
      * clear the current cache for this method
      */
-    fn.clear = function () {
+    moizedFunction.clear = function () {
       cache.clear();
     };
 
     /**
      * @private
      *
-     * @function delete
+     * @function has
      *
      * @description
-     * delete the cache for the key passed for this method
+     * does the function have cache for the specific args passed
      *
-     * @param {Array<*>} args combination of args to remove from cache
+     * @param {Array<*>} key combination of args to remove from cache
+     * @returns {boolean} does the cache for the give args exist
      */
-    fn.delete = function () {
-      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        args[_key2] = arguments[_key2];
-      }
-
-      var key = args.length === 1 && args[0].isMultiParamKey ? args[0] : getMultiParamKey(cache, args);
-
-      deleteItemFromCache(cache, key);
+    moizedFunction.has = function (key) {
+      return cache.has(getCacheKey(key));
     };
 
     /**
@@ -670,7 +1520,21 @@ var createAddPropertiesToFunction = exports.createAddPropertiesToFunction = func
      *
      * @returns {Array<*>}
      */
-    fn.keys = createPluckFromInstanceList(cache, 'key');
+    moizedFunction.keys = createPluckFromInstanceList(cache, 'key');
+
+    /**
+     * @private
+     *
+     * @function remove
+     *
+     * @description
+     * remove the item from cache for the key passed for this method
+     *
+     * @param {Array<*>} key combination of args to remove from cache
+     */
+    moizedFunction.remove = function (key) {
+      cache.remove(getCacheKey(key));
+    };
 
     /**
      * @private
@@ -682,329 +1546,56 @@ var createAddPropertiesToFunction = exports.createAddPropertiesToFunction = func
      *
      * @returns {Array<*>}
      */
-    fn.values = createPluckFromInstanceList(cache, 'value');
+    moizedFunction.values = createPluckFromInstanceList(cache, 'value');
 
-    return addStaticPropertiesToFunction(originalFunction, fn);
+    return addStaticPropertiesToFunction(originalFunction, moizedFunction);
   };
 };
-
-/**
- * @private
- *
- * @function isFiniteAndPositive
- *
- * @description
- * is the number passed finite and positive
- *
- * @param {number} number number to test for finiteness and positivity
- * @returns {boolean} is the number finite and positive
- */
-var isFiniteAndPositive = exports.isFiniteAndPositive = function isFiniteAndPositive(number) {
-  return number === ~~number && number > 0;
-};
-
-/**
- * @private
- *
- * @function getIndexOfKey
- *
- * @description
- * get the index of the key in the map
- *
- * @param {Cache} cache cache to iterate over
- * @param {*} key key to find in list
- * @returns {number} index location of key in list
- */
-var getIndexOfKey = exports.getIndexOfKey = function getIndexOfKey(cache, key) {
-  var iterator = cache.getKeyIterator();
-
-  var iteration = void 0;
-
-  while ((iteration = iterator.next()) && !iteration.done) {
-    if (iteration.key === key) {
-      return iteration.index;
-    }
-  }
-
-  return -1;
-};
-
-/**
- * @private
- *
- * @function stringify
- *
- * @description
- * stringify with a custom replacer if circular, else use standard JSON.stringify
- *
- * @param {*} value value to stringify
- * @param {function} [replacer] replacer to used in stringification
- * @returns {string} the stringified version of value
- */
-var stringify = exports.stringify = function stringify(value, replacer) {
-  try {
-    return jsonStringify(value, replacer);
-  } catch (exception) {
-    return jsonStringify(decycle(value), replacer);
-  }
-};
-
-/**
- * @private
- *
- * @function getStringifiedArgument
- *
- * @description
- * get the stringified version of the argument passed
- *
- * @param {*} arg argument to stringify
- * @param {function} [replacer] replacer to used in stringification
- * @returns {string}
- */
-var getStringifiedArgument = exports.getStringifiedArgument = function getStringifiedArgument(arg, replacer) {
-  return isComplexObject(arg) ? stringify(arg, replacer) : arg;
-};
-
-/**
- * @private
- *
- * @function createArgumentSerializer
- *
- * @description
- * create the internal argument serializer based on the options passed
- *
- * @param {boolean} serializeFunctions should functions be included in the serialization
- * @param {number} maxArgs the cap on the number of arguments used in serialization
- * @returns {function(...Array<*>): string} argument serialization method
- */
-var createArgumentSerializer = exports.createArgumentSerializer = function createArgumentSerializer(serializeFunctions, maxArgs) {
-  var replacer = serializeFunctions ? customReplacer : null;
-  var hasMaxArgs = isFiniteAndPositive(maxArgs);
-
-  return function (args) {
-    var length = hasMaxArgs ? maxArgs : args.length;
-
-    var index = -1,
-        key = '|';
-
-    while (++index < length) {
-      key += getStringifiedArgument(args[index], replacer) + '|';
-    }
-
-    return key;
-  };
-};
-
-/**
- * @private
- *
- * @function getSerializerFunction
- *
- * @description
- * based on the options passed, either use the serializer passed or generate the internal one
- *
- * @param {function} [serializerFromOptions] serializer function passed into options
- * @param {boolean} serializeFunctions should functions be included in the serialization
- * @param {number} maxArgs the cap on the number of arguments used in serialization
- * @returns {function} the function to use in serializing the arguments
- */
-var getSerializerFunction = exports.getSerializerFunction = function getSerializerFunction(serializerFromOptions, serializeFunctions, maxArgs) {
-  // $FlowIgnore
-  return isFunction(serializerFromOptions) ? serializerFromOptions : createArgumentSerializer(serializeFunctions, maxArgs);
-};
-
-/**
- * @private
- *
- * @function createGetCacheKey
- *
- * @description
- * get the key used for storage in the method's cache
- *
- * @param {Cache} cache cache where keys are stored
- * @param {boolean} serialize should the arguments be serialized into a string
- * @param {function} serializerFromOptions method used to serialize keys into a string
- * @param {boolean} serializeFunctions should functions be converted to string in serialization
- * @param {number} maxArgs the maximum number of arguments to use in the serialization
- * @returns {function(Array<*>): *}
- */
-var createGetCacheKey = exports.createGetCacheKey = function createGetCacheKey(cache, serialize, serializerFromOptions, serializeFunctions, maxArgs) {
-  if (serialize) {
-    var serializeArguments = getSerializerFunction(serializerFromOptions, serializeFunctions, maxArgs);
-
-    return function (args) {
-      return serializeArguments(args);
-    };
-  }
-
-  if (isFiniteAndPositive(maxArgs)) {
-    return function (args) {
-      return args.length > 1 ? getMultiParamKey(cache, args.slice(0, maxArgs)) : args[0];
-    };
-  }
-
-  return function (args) {
-    return args.length > 1 ? getMultiParamKey(cache, args) : args[0];
-  };
-};
-
-/**
- * @private
- *
- * @function setExpirationOfCache
- *
- * @description
- * create function to set the cache to expire after the maxAge passed (coalesced to 0)
- *
- * @param {number} maxAge number in ms to wait before expiring the cache
- * @returns {function(Cache, Array<*>): void} setExpirationOfCache method
- */
-var createSetExpirationOfCache = exports.createSetExpirationOfCache = function createSetExpirationOfCache(maxAge) {
-  return function (cache, key) {
-    setTimeout(function () {
-      deleteItemFromCache(cache, key);
-    }, maxAge);
-  };
-};
-
-/**
- * @private
- *
- * @function createPromiseRejecter
- *
- * @description
- * create method that will reject the promise and delete the key from cache
- *
- * @param {Cache} cache cache to update
- * @param {*} key key to delete from cache
- * @param {function} PromiseLibrary the promise library used
- * @returns {function} the rejecter function for the promise
- */
-var createPromiseRejecter = exports.createPromiseRejecter = function createPromiseRejecter(cache, key, PromiseLibrary) {
-  return function (exception) {
-    cache.delete(key);
-
-    return PromiseLibrary.reject(exception);
-  };
-};
-
-/**
- * @private
- *
- * @function createPromiseResolver
- *
- * @description
- * create method that will resolve the promise and update the key in cache
- *
- * @param {Cache} cache cache to update
- * @param {*} key key to update in cache
- * @param {boolean} hasMaxAge should the cache expire after some time
- * @param {function} setExpirationOfCache function to set the expiration of cache
- * @param {function} PromiseLibrary the promise library used
- * @returns {function} the resolver function for the promise
- */
-var createPromiseResolver = exports.createPromiseResolver = function createPromiseResolver(cache, key, hasMaxAge, setExpirationOfCache, PromiseLibrary) {
-  return function (resolvedValue) {
-    cache.updateItem(key, PromiseLibrary.resolve(resolvedValue));
-
-    if (hasMaxAge) {
-      setExpirationOfCache(cache, key);
-    }
-
-    return resolvedValue;
-  };
-};
-
-/**
- * @private
- *
- * @function createSetNewCachedValue
- *
- * @description
- * assign the new value to the key in the functions cache and return the value
- *
- * @param {Cache} cache the cache to assign the value to at key
- * @param {boolean} isPromise is the value a promise or not
- * @param {number} maxAge how long should the cache persist
- * @param {number} maxSize the maximum number of values to store in cache
- * @param {Function} PromiseLibrary the library to use for resolve / reject
- * @returns {function(function, *, *): *} value just stored in cache
- */
-var createSetNewCachedValue = exports.createSetNewCachedValue = function createSetNewCachedValue(cache, isPromise, maxAge, maxSize, PromiseLibrary) {
-  var hasMaxAge = isFiniteAndPositive(maxAge);
-  var hasMaxSize = isFiniteAndPositive(maxSize);
-  var setExpirationOfCache = createSetExpirationOfCache(maxAge);
-
-  if (isPromise) {
-    return function (key, value) {
-      var promiseResolver = createPromiseResolver(cache, key, hasMaxAge, setExpirationOfCache, PromiseLibrary);
-      var promiseRejecter = createPromiseRejecter(cache, key, PromiseLibrary);
-
-      var handler = value.then(promiseResolver, promiseRejecter);
-
-      cache.set(key, handler);
-
-      if (hasMaxSize && cache.size > maxSize) {
-        deleteItemFromCache(cache, undefined, true);
-      }
-
-      return handler;
-    };
-  }
-
-  return function (key, value) {
-    cache.set(key, value);
-
-    if (hasMaxAge) {
-      setExpirationOfCache(cache, key);
-    }
-
-    if (hasMaxSize && cache.size > maxSize) {
-      deleteItemFromCache(cache, undefined, true);
-    }
-
-    return value;
-  };
-};
-});
-
-var utils_13 = utils.getMultiParamKey;
-
-var Cache_1 = createCommonjsModule(function (module, exports) {
-'use strict';
-
-exports.__esModule = true;
-
-
-
-
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-// constants
-
-
 // utils
+/**
+ * @private
+ *
+ * @class Cache
+ *
+ * @classdesc
+ * class that is similar to the Map infrastructure, but faster and
+ * more targeted to moize use cases
+ */
 
 
 // types
 
-
-/**
- * @class Cache
- * @classdesc class that mimics parts of the Map infrastructure, but faster
- */
 var Cache = function () {
   function Cache() {
     _classCallCheck(this, Cache);
 
-    this[constants.CACHE_IDENTIFIER] = true;
-    this.lastItem = undefined;
+    this.lastItem = {};
     this.list = [];
     this.size = 0;
   }
-  // $FlowIgnore computed properties not yet supported on classes
 
+  /**
+   * @function add
+   * @memberof Cache
+   * @instance
+   *
+   * @description
+   * add a new item to cache
+   *
+   * @param {*} key the key to assign
+   * @param {*} value the value to assign at key
+   */
+  Cache.prototype.add = function add(key, value) {
+    this.lastItem = unshift(this.list, {
+      key: key,
+      value: value
+    });
+
+    this.size++;
+  };
 
   /**
    * @function clear
@@ -1012,34 +1603,34 @@ var Cache = function () {
    * @instance
    *
    * @description
-   * remove all keys from the map
+   * clear the cache of all items
    */
-  Cache.prototype.clear = function clear() {
-    this.list.length = 0;
 
-    this.setLastItem();
+
+  Cache.prototype.clear = function clear() {
+    this.lastItem = {};
+    this.list.length = this.size = 0;
   };
 
   /**
-   * @function delete
+   * @function expireAfter
    * @memberof Cache
    * @instance
    *
    * @description
-   * remove the key from the map
+   * remove from cache after maxAge time has passed
    *
-   * @param {*} key key to delete from the map
+   * @param {*} key the key to remove
+   * @param {number} maxAge the time in milliseconds to wait before removing key
    */
 
 
-  Cache.prototype.delete = function _delete(key) {
-    var index = (0, utils.getIndexOfKey)(this, key);
+  Cache.prototype.expireAfter = function expireAfter(key, maxAge) {
+    var _this = this;
 
-    if (~index) {
-      (0, utils.splice)(this.list, index);
-
-      this.setLastItem(this.list[0]);
-    }
+    setTimeout(function () {
+      _this.remove(key);
+    }, maxAge);
   };
 
   /**
@@ -1048,119 +1639,81 @@ var Cache = function () {
    * @instance
    *
    * @description
-   * get the value for the given key
+   * get the value of an item from cache if it exists
    *
-   * @param {*} key key to get the value for
-   * @returns {*} value at the key location
+   * @param {*} key the key to get the value of
+   * @returns {*} the value at key
    */
 
 
   Cache.prototype.get = function get(key) {
-    if (!this.lastItem) {
-      return undefined;
+    if (!this.size) {
+      return;
     }
 
     if (key === this.lastItem.key) {
       return this.lastItem.value;
     }
 
-    var index = (0, utils.getIndexOfKey)(this, key);
+    var index = findIndexAfterFirst(this.list, key);
 
     if (~index) {
-      var item = this.list[index];
+      this.lastItem = this.list[index];
 
-      this.setLastItem((0, utils.unshift)((0, utils.splice)(this.list, index), item));
-
-      return item.value;
+      return unshift(splice(this.list, index), this.lastItem).value;
     }
   };
 
   /**
-   * @function getKeyIterator
-   * @memberof Cache
-   * @instance
+   * @private
    *
-   * @description
-   * create a custom iterator for the keys in the list
-   *
-   * @returns {{next: (function(): Object)}} iterator instance
-   */
-
-
-  Cache.prototype.getKeyIterator = function getKeyIterator() {
-    var _this = this;
-
-    var index = -1;
-
-    return {
-      next: function next() {
-        return ++index >= _this.size ? constants.ITERATOR_DONE_OBJECT : {
-          index: index,
-          isMultiParamKey: _this.list[index].isMultiParamKey,
-          key: _this.list[index].key
-        };
-      }
-    };
-  };
-
-  /**
    * @function has
-   * @memberof Cache
-   * @instance
    *
    * @description
-   * does the map have the key provided
+   * does the key exist in the cache
    *
-   * @param {*} key key to test for in the map
-   * @returns {boolean} does the map have the key
+   * @param {*} key the key to find in cache
+   * @returns {boolean} does the key exist in cache
    */
 
 
   Cache.prototype.has = function has(key) {
-    // $FlowIgnore: this.lastItem exists
-    return this.size !== 0 && (key === this.lastItem.key || !!~(0, utils.getIndexOfKey)(this, key));
+    return this.size !== 0 && (key === this.lastItem.key || !!~findIndexAfterFirst(this.list, key));
   };
 
-  /**
-   * @function set
+  /**=
+   * @function remove
    * @memberof Cache
    * @instance
    *
    * @description
-   * set the value at the key location, or add a new item with that key value
+   * remove the item at key from cach
    *
-   * @param {*} key key to assign value of
-   * @param {*} value value to store in the map at key
+   * @param {*} key the key to remove from cache
+   * @returns {void}
    */
 
 
-  Cache.prototype.set = function set(key, value) {
-    this.setLastItem((0, utils.unshift)(this.list, {
-      key: key,
-      isMultiParamKey: !!(key && key.isMultiParamKey),
-      value: value
-    }));
+  Cache.prototype.remove = function remove(key) {
+    var index = findIndex(this.list, key);
+
+    if (~index) {
+      splice(this.list, index);
+
+      if (this.size === 1) {
+        return this.clear();
+      }
+
+      this.size--;
+
+      if (!index) {
+        this.lastItem = this.list[0];
+      }
+    }
   };
 
   /**
-   * @function setLastItem
-   * @memberof Cache
-   * @instance
-   *
-   * @description
-   * assign the lastItem
-   *
-   * @param {ListItem|undefined} lastItem the item to assign
-   */
-
-
-  Cache.prototype.setLastItem = function setLastItem(lastItem) {
-    this.lastItem = lastItem;
-    this.size = this.list.length;
-  };
-
-  /**
-   * @function updateItem
+   * @function update
    * @memberof Cache
    * @instance
    *
@@ -1172,8 +1725,8 @@ var Cache = function () {
    */
 
 
-  Cache.prototype.updateItem = function updateItem(key, value) {
-    var index = (0, utils.getIndexOfKey)(this, key);
+  Cache.prototype.update = function update(key, value) {
+    var index = findIndex(this.list, key);
 
     if (~index) {
       this.list[index].value = value;
@@ -1187,67 +1740,17 @@ var Cache = function () {
   return Cache;
 }();
 
-exports.default = Cache;
-module.exports = exports['default'];
-});
-
-var Cache = unwrapExports(Cache_1);
-
-var index = createCommonjsModule(function (module, exports) {
-'use strict';
-
-exports.__esModule = true;
-
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 // cache
-
-
 // constants
-
-
-// utils
-
-
 // types
 
 
-
-
-var _Cache2 = _interopRequireDefault(Cache_1);
-
-
-
-
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+// utils
 /**
  * @module moize
  */
-
-/**
- * @constant {{isPromise: true}} PROMISE_OPTIONS
- */
-var PROMISE_OPTIONS = {
-  isPromise: true
-};
-
-/**
- * @constant {{maxArgs: number, serialize: boolean, serializeFunctions: boolean}} REACT_OPTIONS
- */
-var REACT_OPTIONS = {
-  maxArgs: 2,
-  serialize: true,
-  serializeFunctions: true
-};
-
-/**
- * @constant {{serialize: boolean}} SERIALIZE_OPTIONS
- */
-var SERIALIZE_OPTIONS = {
-  serialize: true
-};
 
 /**
  * @function moize
@@ -1275,7 +1778,6 @@ var SERIALIZE_OPTIONS = {
  *
  * @param {function} functionOrComposableOptions method to memoize
  * @param {Options} [passedOptions={}] options to customize how the caching is handled
- * @param {Cache} [passedOptions.cache=new Cache()] caching mechanism to use for method
  * @param {boolean} [passedOptions.isPromise=false] is the function return expected to be a promise to resolve
  * @param {number} [passedOptions.maxAge=Infinity] the maximum age the value should persist in cache
  * @param {number} [passedOptions.maxArgs=Infinity] the maximum number of arguments to be used in serializing the keys
@@ -1288,110 +1790,89 @@ var SERIALIZE_OPTIONS = {
 var moize = function moize(functionOrComposableOptions) {
   var passedOptions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-  if ((0, utils.isPlainObject)(functionOrComposableOptions)) {
-    return function (fn) {
+  if (isPlainObject(functionOrComposableOptions)) {
+    return function (fnOrOptions) {
       var otherOptions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-      return moize(fn, _extends({}, functionOrComposableOptions, otherOptions));
+      if (isPlainObject(fnOrOptions)) {
+        return moize(_extends({}, functionOrComposableOptions, fnOrOptions));
+      }
+
+      return moize(fnOrOptions, _extends({}, functionOrComposableOptions, otherOptions));
     };
   }
 
-  if (!(0, utils.isFunction)(functionOrComposableOptions)) {
-    throw new TypeError(constants.INVALID_FIRST_PARAMETER_ERROR);
+  if (!isFunction(functionOrComposableOptions)) {
+    throw new TypeError(INVALID_FIRST_PARAMETER_ERROR);
   }
 
-  var isComposed = functionOrComposableOptions.isMemoized;
-  // $FlowIgnore the value of the property is a function
+  var isComposed = functionOrComposableOptions.isMoized;
+  // $FlowIgnore if the function is already moized, it has an originalFunction property on it
   var fn = isComposed ? functionOrComposableOptions.originalFunction : functionOrComposableOptions;
-  var options = !isComposed ? passedOptions : _extends({}, functionOrComposableOptions.options, passedOptions);
 
-  var _options$cache = options.cache,
-      cache = _options$cache === undefined ? new _Cache2.default() : _options$cache,
-      _options$isPromise = options.isPromise,
-      isPromise = _options$isPromise === undefined ? false : _options$isPromise,
-      _options$maxAge = options.maxAge,
-      maxAge = _options$maxAge === undefined ? constants.INFINITY : _options$maxAge,
-      _options$maxArgs = options.maxArgs,
-      maxArgs = _options$maxArgs === undefined ? constants.INFINITY : _options$maxArgs,
-      _options$maxSize = options.maxSize,
-      maxSize = _options$maxSize === undefined ? constants.INFINITY : _options$maxSize,
-      _options$promiseLibra = options.promiseLibrary,
-      promiseLibrary = _options$promiseLibra === undefined ? Promise : _options$promiseLibra,
-      _options$serialize = options.serialize,
-      serialize = _options$serialize === undefined ? false : _options$serialize,
-      _options$serializeFun = options.serializeFunctions,
-      serializeFunctions = _options$serializeFun === undefined ? false : _options$serializeFun,
-      serializer = options.serializer;
+  var options = getDefaultedOptions(!isComposed ? passedOptions : _extends({}, functionOrComposableOptions.options, passedOptions));
 
+  var cache = new Cache();
 
-  if (isPromise && !promiseLibrary) {
-    throw new ReferenceError(constants.NO_PROMISE_LIBRARY_EXISTS_ERROR_MESSAGE);
-  }
+  var addPropertiesToFunction = createAddPropertiesToFunction(cache, fn, options);
+  var getCacheKey = createGetCacheKey(cache, options);
+  var setNewCachedValue = createSetNewCachedValue(cache, options);
 
-  var addPropertiesToFunction = (0, utils.createAddPropertiesToFunction)(cache, fn, options);
-  var getCacheKey = (0, utils.createGetCacheKey)(cache, serialize, serializer, serializeFunctions, maxArgs);
-  var setNewCachedValue = (0, utils.createSetNewCachedValue)(cache, isPromise, maxAge, maxSize, promiseLibrary);
-
-  var key = void 0;
-
-  /**
-   * @private
-   *
-   * @function memoizedFunction
-   *
-   * @description
-   * higher-order function which either returns from cache or stores newly-computed value and returns it
-   *
-   * @param {Array<*>} args arguments passed to method
-   * @returns {any} value resulting from executing of fn passed to memoize
-   */
-  var memoizedFunction = function memoizedFunction() {
+  var moizedFunction = function moizedFunction() {
     for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
       args[_key] = arguments[_key];
     }
 
-    key = getCacheKey(args);
+    var key = getCacheKey(args);
 
-    return cache.has(key) ? cache.get(key) : setNewCachedValue(key, fn.apply(this, args));
+    return cache.size && cache.has(key) ? cache.get(key) : setNewCachedValue(key, fn.apply(this, args));
   };
 
-  return addPropertiesToFunction(memoizedFunction);
+  return addPropertiesToFunction(moizedFunction);
 };
 
-moize.compose = utils.compose;
-moize.maxAge = (0, utils.createCurriableOptionMethod)(moize, 'maxAge');
-moize.maxArgs = (0, utils.createCurriableOptionMethod)(moize, 'maxArgs');
-moize.maxSize = (0, utils.createCurriableOptionMethod)(moize, 'maxSize');
+moize.compose = compose;
+moize.isMoized = isMoized;
+moize.maxAge = createCurriableOptionMethod(moize, 'maxAge');
+moize.maxArgs = createCurriableOptionMethod(moize, 'maxArgs');
+moize.maxSize = createCurriableOptionMethod(moize, 'maxSize');
 moize.promise = moize(PROMISE_OPTIONS);
 moize.react = moize(REACT_OPTIONS);
+moize.reactSimple = compose(moize.react, moize.maxSize(1));
 moize.serialize = moize(SERIALIZE_OPTIONS);
 moize.simple = moize.maxSize(1);
 
-exports.default = moize;
-module.exports = exports['default'];
-});
+/**
+ * Creates a shallow equality comparison function given an index at which to
+ * start array comparison.
+ *
+ * @param  {Number}  index Index at which to start array comparison
+ * @return {Function}      Shallow equality comparison function
+ */
+function createIsShallowEqualFromIndex( index ) {
+	/**
+	 * Returns true if the two arrays are shallowly equal from the scope index,
+	 * or false otherwise.
+	 *
+	 * @param  {Array}   arrayA First array in comparison
+	 * @param  {Array}   arrayB Second array in comparison
+	 * @return {Boolean}        Whether arrays are equal from index
+	 */
+	return function( arrayA, arrayB ) {
+		var i;
+		if ( arrayA.length !== arrayB.length ) {
+			return false;
+		}
 
-var memoize = unwrapExports(index);
+		for ( i = index; i < arrayA.length; i++ ) {
+			if ( arrayA[ i ] !== arrayB[ i ] ) {
+				return false;
+			}
+		}
 
-var index$1 = function shallowEqualArrays(arrA, arrB) {
-  if (arrA === arrB) {
-    return true;
-  }
-
-  var len = arrA.length;
-
-  if (arrB.length !== len) {
-    return false;
-  }
-
-  for (var i = 0; i < len; i++) {
-    if (arrA[i] !== arrB[i]) {
-      return false;
-    }
-  }
-
-  return true;
-};
+		return true;
+	};
+}
 
 /**
  * Returns the first argument.
@@ -1404,28 +1885,23 @@ function identity( value ) {
 }
 
 /**
- * Creates a custom serializer for memoization.
+ * Returns true if the two arrays are shallowly equal, or false otherwise.
  *
- * @param  {moize.Cache} cache Moize cache instance
- * @return {Function}          Memoization serializer
+ * @param  {Array}   arrayA First array in comparison
+ * @param  {Array}   arrayB Second array in comparison
+ * @return {Boolean}        Whether arrays are equal
  */
-function createSerializer( cache ) {
-	/**
-	 * Serializes arguments for generating a cache key. This behaves more-or-
-	 * less identical to moize's default `getCacheKey` behavior, with the
-	 * exception that it ignores the first argument in generating the key.
-	 *
-	 * @param  {Array} args Memoized function arguments as array
-	 * @return {*}          Cache key
-	 */
-	return function( args ) {
-		if ( args.length > 2 ) {
-			return utils_13( cache, args.slice( 1 ) );
-		}
+var isShallowEqual = createIsShallowEqualFromIndex( 0 );
 
-		return args[ 1 ];
-	};
-}
+/**
+ * Returns true if the two arrays are shallowly equal ignoring the first
+ * entry, or false otherwise.
+ *
+ * @param  {Array}   arrayA First array in comparison
+ * @param  {Array}   arrayB Second array in comparison
+ * @return {Boolean}        Whether arrays are equal ignoring first entry
+ */
+var isShallowEqualIgnoringFirst = createIsShallowEqualFromIndex( 1 );
 
 /**
  * Returns a memoized selector function. The getDependants function argument is
@@ -1441,17 +1917,11 @@ function createSerializer( cache ) {
  *                                  cache bust consideration
  * @return {*}                      Selector return value
  */
-var rememo = function( selector, getDependants ) {
-	var cache, memoizedSelector, lastDependants;
+var index = function( selector, getDependants ) {
+	var memoizedSelector, lastDependants;
 
-	// We need to maintain our own cache in order to recreate the default cache
-	// serialization behavior using moize's `getMultiParamKey` utility
-	cache = new Cache();
-
-	memoizedSelector = memoize( selector, {
-		cache: cache,
-		serialize: true,
-		serializer: createSerializer( cache ),
+	memoizedSelector = moize( selector, {
+		equals: isShallowEqualIgnoringFirst,
 
 		// While we never use moize's promise functionality, we must stub a
 		// replacement Promise library to prevent it from trying to access the
@@ -1481,7 +1951,7 @@ var rememo = function( selector, getDependants ) {
 
 		// Perform shallow comparison on this pass with the last. If references
 		// have changed, destroy cache to recalculate memoized function result.
-		if ( lastDependants && ! index$1( dependants, lastDependants ) ) {
+		if ( lastDependants && ! isShallowEqual( dependants, lastDependants ) ) {
 			memoizedSelector.clear();
 		}
 
@@ -1495,6 +1965,6 @@ var rememo = function( selector, getDependants ) {
 	return callSelector;
 };
 
-return rememo;
+return index;
 
 }());

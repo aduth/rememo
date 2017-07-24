@@ -1,43 +1,27 @@
 'use strict';
 
 import memoize from 'moize';
-import { getMultiParamKey } from 'moize/lib/utils';
-import Cache from 'moize/lib/Cache';
-import shallowEqual from 'shallow-equal/arrays';
+import createIsShallowEqualFromIndex from './createIsShallowEqualFromIndex';
+import identity from './identity';
 
 /**
- * Returns the first argument.
+ * Returns true if the two arrays are shallowly equal, or false otherwise.
  *
- * @param  {*} value Value to return
- * @return {*}       Value returned
+ * @param  {Array}   arrayA First array in comparison
+ * @param  {Array}   arrayB Second array in comparison
+ * @return {Boolean}        Whether arrays are equal
  */
-function identity( value ) {
-	return value;
-}
+var isShallowEqual = createIsShallowEqualFromIndex( 0 );
 
 /**
- * Creates a custom serializer for memoization.
+ * Returns true if the two arrays are shallowly equal ignoring the first
+ * entry, or false otherwise.
  *
- * @param  {moize.Cache} cache Moize cache instance
- * @return {Function}          Memoization serializer
+ * @param  {Array}   arrayA First array in comparison
+ * @param  {Array}   arrayB Second array in comparison
+ * @return {Boolean}        Whether arrays are equal ignoring first entry
  */
-function createSerializer( cache ) {
-	/**
-	 * Serializes arguments for generating a cache key. This behaves more-or-
-	 * less identical to moize's default `getCacheKey` behavior, with the
-	 * exception that it ignores the first argument in generating the key.
-	 *
-	 * @param  {Array} args Memoized function arguments as array
-	 * @return {*}          Cache key
-	 */
-	return function( args ) {
-		if ( args.length > 2 ) {
-			return getMultiParamKey( cache, args.slice( 1 ) );
-		}
-
-		return args[ 1 ];
-	};
-}
+var isShallowEqualIgnoringFirst = createIsShallowEqualFromIndex( 1 );
 
 /**
  * Returns a memoized selector function. The getDependants function argument is
@@ -54,16 +38,10 @@ function createSerializer( cache ) {
  * @return {*}                      Selector return value
  */
 export default function( selector, getDependants ) {
-	var cache, memoizedSelector, lastDependants;
-
-	// We need to maintain our own cache in order to recreate the default cache
-	// serialization behavior using moize's `getMultiParamKey` utility
-	cache = new Cache();
+	var memoizedSelector, lastDependants;
 
 	memoizedSelector = memoize( selector, {
-		cache: cache,
-		serialize: true,
-		serializer: createSerializer( cache ),
+		equals: isShallowEqualIgnoringFirst,
 
 		// While we never use moize's promise functionality, we must stub a
 		// replacement Promise library to prevent it from trying to access the
@@ -93,7 +71,7 @@ export default function( selector, getDependants ) {
 
 		// Perform shallow comparison on this pass with the last. If references
 		// have changed, destroy cache to recalculate memoized function result.
-		if ( lastDependants && ! shallowEqual( dependants, lastDependants ) ) {
+		if ( lastDependants && ! isShallowEqual( dependants, lastDependants ) ) {
 			memoizedSelector.clear();
 		}
 

@@ -1,4 +1,4 @@
-#### v1.2.0 (---)
+#### v1.2.0 (2017-07-24)
 
 - Internal: Drop moize dependency in favor of home-grown memoization solution, significantly reducing bundled size (10.2kb -> 0.5kb minified, 3.0kb -> 0.3kb minified + gzipped)
 - Internal: Add package-lock.json

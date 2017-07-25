@@ -104,7 +104,7 @@ Now we can call `getTasksByCompletion` as many times as we want without needless
 
 ## Testing
 
-To simplify testing of memoized selectors, the function returned by `createSelector` includes the [moize](https://github.com/planttheidea/moize) memoized function instance on its `memoizedSelector` property. To clear the cache before each test, call `clear` on this property:
+To simplify testing of memoized selectors, the function returned by `createSelector` includes the memoized function instance on its `memoizedSelector` property. To clear the cache before each test, call `clear` on this property:
 
 ```js
 const getTasksByCompletion = require( '../selector' );

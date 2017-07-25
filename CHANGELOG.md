@@ -1,7 +1,6 @@
 #### v1.2.0 (---)
 
-- Internal: Upgrade moize dependency to 3.x
-- Internal: Drop shallow-equal dependency (reuse home-grown solution for index-based shallow comparison in memoize arguments and selector dependants equality)
+- Internal: Drop moize dependency in favor of home-grown memoization solution, significantly reducing bundled size (10.2kb -> 0.5kb minified, 3.0kb -> 0.3kb minified + gzipped)
 
 #### v1.1.1 (2017-06-13)
 

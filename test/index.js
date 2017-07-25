@@ -1,6 +1,6 @@
 const assert = require( 'assert' );
 const sinon = require( 'sinon' );
-const createSelector = require( '../es' ).default;
+const createSelector = require( '../' );
 
 describe( 'createSelector', () => {
 	const sandbox = sinon.sandbox.create();

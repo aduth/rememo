@@ -1,27 +1,16 @@
 'use strict';
 
-import memoize from 'moize';
-import createIsShallowEqualFromIndex from './createIsShallowEqualFromIndex';
-import identity from './identity';
+import isShallowEqual from 'shallow-equal/arrays';
 
 /**
- * Returns true if the two arrays are shallowly equal, or false otherwise.
+ * Returns the first argument.
  *
- * @param  {Array}   arrayA First array in comparison
- * @param  {Array}   arrayB Second array in comparison
- * @return {Boolean}        Whether arrays are equal
+ * @param  {*} value Value to return
+ * @return {*}       Value returned
  */
-var isShallowEqual = createIsShallowEqualFromIndex( 0 );
-
-/**
- * Returns true if the two arrays are shallowly equal ignoring the first
- * entry, or false otherwise.
- *
- * @param  {Array}   arrayA First array in comparison
- * @param  {Array}   arrayB Second array in comparison
- * @return {Boolean}        Whether arrays are equal ignoring first entry
- */
-var isShallowEqualIgnoringFirst = createIsShallowEqualFromIndex( 1 );
+function identity( value ) {
+	return value;
+}
 
 /**
  * Returns a memoized selector function. The getDependants function argument is
@@ -38,16 +27,40 @@ var isShallowEqualIgnoringFirst = createIsShallowEqualFromIndex( 1 );
  * @return {*}                      Selector return value
  */
 export default function( selector, getDependants ) {
-	var memoizedSelector, lastDependants;
+	var cache = [],
+		lastDependants;
 
-	memoizedSelector = memoize( selector, {
-		equals: isShallowEqualIgnoringFirst,
+	/**
+	 * The memoized function, caching the result of the original function when
+	 * passed arguments. Ignores first argument in considering cache reuse.
+	 *
+	 * @param  {Object} source Source object for derivation
+	 * @param  {...*}   args   Additional arguments to pass to selector
+	 * @return {*}             Selector result
+	 */
+	function memoizedSelector( /* state, ...args */ ) {
+		var args = Array.prototype.slice.call( arguments, 1 ),
+			i, il, result;
 
-		// While we never use moize's promise functionality, we must stub a
-		// replacement Promise library to prevent it from trying to access the
-		// Promise global, which is not available in all supported environments
-		promiseLibrary: function() {}
-	} );
+		// Try to find an entry in cache which matches arguments.
+		for ( i = 0, il = cache.length; i < il; i++ ) {
+			if ( isShallowEqual( cache[ i ][ 0 ], args ) ) {
+				return cache[ i ][ 1 ];
+			}
+		}
+
+		// If we reach here, assume there is no cache, so generate new
+		result = selector.apply( null, arguments );
+
+		// Each cache entry is a tuple of [ args, result ]
+		cache.push( [ args, result ] );
+
+		return result;
+	}
+
+	memoizedSelector.clear = function() {
+		cache = [];
+	};
 
 	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {

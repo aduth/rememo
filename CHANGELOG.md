@@ -1,3 +1,8 @@
+#### v1.3.0 (---)
+
+- New Feature: `createSelector` accepts an optional third argument to specify options, currently supporting `maxSize` (defaulting to `Infinity`)
+- Internal: Cache lookup and max size use an LRU (least recently used) policy to bias recent access, improving efficiency on subsequent calls with same arguments
+
 #### v1.2.0 (2017-07-24)
 
 - Internal: Drop moize dependency in favor of home-grown memoization solution, significantly reducing bundled size (10.2kb -> 0.5kb minified, 3.0kb -> 0.3kb minified + gzipped)

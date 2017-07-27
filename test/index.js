@@ -3,6 +3,7 @@ const sinon = require( 'sinon' );
 const createSelector = require( '../' );
 
 describe( 'createSelector', () => {
+	let getTasksByCompletion;
 	const sandbox = sinon.sandbox.create();
 
 	const selector = sandbox.spy(
@@ -10,8 +11,6 @@ describe( 'createSelector', () => {
 			( task ) => task.complete === isComplete
 		)
 	);
-
-	const getTasksByCompletion = createSelector( selector, ( state ) => state.todo );
 
 	const getState = () => ( {
 		todo: [
@@ -23,7 +22,7 @@ describe( 'createSelector', () => {
 
 	beforeEach( () => {
 		sandbox.reset();
-		getTasksByCompletion.memoizedSelector.clear();
+		getTasksByCompletion = createSelector( selector, ( state ) => state.todo );
 	} );
 
 	it( 'exposes cache clearing method', () => {
@@ -60,6 +59,39 @@ describe( 'createSelector', () => {
 
 		sinon.assert.calledOnce( selector );
 		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
+	it( 'caches with maxSize', () => {
+		getTasksByCompletion = createSelector(
+			selector,
+			( state ) => state.todo,
+			{ maxSize: 2 }
+		);
+
+		const state = getState();
+
+		// cache MISS [ [ true, 1 ] ] (calls: 1)
+		getTasksByCompletion( state, true, 1 );
+
+		// cache MISS [ [ true, 2 ], [ true, 1 ] ] (calls: 2)
+		getTasksByCompletion( state, true, 2 );
+
+		// cache MISS [ [ true, 3 ], [ true, 2 ] ] (calls: 3)
+		getTasksByCompletion( state, true, 3 );
+
+		// cache MISS [ [ true, 1 ], [ true, 3 ] ] (calls: 4)
+		getTasksByCompletion( state, true, 1 );
+
+		// cache HIT [ [ true, 3 ], [ true, 1 ] ] (calls: 4)
+		getTasksByCompletion( state, true, 3 );
+
+		// cache HIT [ [ true, 1 ], [ true, 3 ] ] (calls: 4)
+		getTasksByCompletion( state, true, 1 );
+
+		// cache MISS [ [ true, 2 ], [ true, 1 ] ] (calls: 5)
+		getTasksByCompletion( state, true, 2 );
+
+		sinon.assert.callCount( selector, 5 );
 	} );
 
 	it( 'defaults to caching on entire state object', () => {

@@ -24,6 +24,7 @@ function identity( value ) {
  * @param  {Function} getDependants Dependant getter returning an immutable
  *                                  reference or array of reference used in
  *                                  cache bust consideration
+ * @param  {?Object}  options       Selector options
  * @return {*}                      Selector return value
  */
 export default function( selector, getDependants, options ) {

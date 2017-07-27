@@ -45,9 +45,22 @@ function identity( value ) {
  *                                  cache bust consideration
  * @return {*}                      Selector return value
  */
-var index = function( selector, getDependants ) {
+var index = function( selector, getDependants, options ) {
 	var cache = [],
-		lastDependants;
+		lastDependants,
+		maxSize;
+
+	// Pull max size from options, defaulting to Infinity (no limit)
+	if ( options && options.maxSize > 0 ) {
+		maxSize = options.maxSize;
+	} else {
+		maxSize = Infinity;
+	}
+
+	// Use object source as dependant if getter not provided
+	if ( ! getDependants ) {
+		getDependants = identity;
+	}
 
 	/**
 	 * The memoized function, caching the result of the original function when
@@ -59,32 +72,39 @@ var index = function( selector, getDependants ) {
 	 */
 	function memoizedSelector( /* state, ...args */ ) {
 		var args = Array.prototype.slice.call( arguments, 1 ),
+			nextCache = [ undefined ],
 			i, il, result;
 
 		// Try to find an entry in cache which matches arguments.
 		for ( i = 0, il = cache.length; i < il; i++ ) {
-			if ( index$1( cache[ i ][ 0 ], args ) ) {
-				return cache[ i ][ 1 ];
+			if ( ! result && index$1( cache[ i ][ 0 ], args ) ) {
+				result = cache[ i ];
+			} else {
+				nextCache.push( cache[ i ] );
 			}
 		}
 
-		// If we reach here, assume there is no cache, so generate new
-		result = selector.apply( null, arguments );
+		// If no result found in cache, generate new
+		if ( ! result ) {
+			result = [ args, selector.apply( null, arguments ) ];
+		}
 
-		// Each cache entry is a tuple of [ args, result ]
-		cache.push( [ args, result ] );
+		// Move result to top of stack (bias to recent access)
+		nextCache[ 0 ] = result;
 
-		return result;
+		// Trim cache if exceeding max size
+		if ( nextCache.length > maxSize ) {
+			nextCache.length = maxSize;
+		}
+
+		cache = nextCache;
+
+		return result[ 1 ];
 	}
 
 	memoizedSelector.clear = function() {
 		cache = [];
 	};
-
-	// Use object source as dependant if getter not provided
-	if ( ! getDependants ) {
-		getDependants = identity;
-	}
 
 	/**
 	 * The augmented selector call, considering first whether dependants have

@@ -50,6 +50,18 @@ describe( 'createSelector', () => {
 		assert.deepEqual( completed, selector( state, true ) );
 	} );
 
+	it( 'caches return value for non-primitive args by reference', () => {
+		const state = getState();
+		let completed;
+		const obj = {};
+		completed = getTasksByCompletion( state, true, obj );
+		obj.mutated = true;
+		completed = getTasksByCompletion( state, true, obj );
+
+		sinon.assert.calledOnce( selector );
+		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
 	it( 'defaults to caching on entire state object', () => {
 		const getTasksByCompletionOnState = createSelector( selector );
 		let state = getState();
@@ -88,6 +100,19 @@ describe( 'createSelector', () => {
 		let completed = getTasksByCompletion( state, true );
 		state = getState();
 		completed = getTasksByCompletion( state, true );
+
+		sinon.assert.calledTwice( selector );
+		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
+	it( 'clears cache when non-primitive argument reference changes', () => {
+		const state = getState();
+		let completed;
+		let obj;
+		obj = {};
+		completed = getTasksByCompletion( state, true, obj );
+		obj = {};
+		completed = getTasksByCompletion( state, true, obj );
 
 		sinon.assert.calledTwice( selector );
 		assert.deepEqual( completed, selector( state, true ) );

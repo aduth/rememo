@@ -53,12 +53,21 @@ export default function( selector, getDependants, options ) {
 	 * @return {*}             Selector result
 	 */
 	function memoizedSelector( /* state, ...args */ ) {
-		var args = Array.prototype.slice.call( arguments, 1 ),
+		var len = arguments.length,
+			args = new Array( len ),
 			nextCache = [ undefined ],
-			i, il, result;
+			i, result;
+
+		// Copy arguments from first index. Using a loop is shown to be most
+		// performant in V8 to avoid arguments leaking deoptimization:
+		//
+		// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
+		for ( i = 1; i < len; i++ ) {
+			args[ i ] = arguments[ i ];
+		}
 
 		// Try to find an entry in cache which matches arguments.
-		for ( i = 0, il = cache.length; i < il; i++ ) {
+		for ( i = 0, len = cache.length; i < len; i++ ) {
 			if ( ! result && isShallowEqual( cache[ i ][ 0 ], args ) ) {
 				result = cache[ i ];
 			} else {

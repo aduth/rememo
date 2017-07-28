@@ -104,15 +104,18 @@ export default function( selector, getDependants, options ) {
 			result = [ argsSansState, selector.apply( null, args ) ];
 		}
 
-		// Move result to top of stack (bias to recent access)
-		nextCache[ 0 ] = result;
+		// Only need to update cache if result wasn't already top entry
+		if ( nextCache[ 0 ] !== result ) {
+			// Move result to top of stack (bias to recent access)
+			nextCache[ 0 ] = result;
 
-		// Trim cache if exceeding max size
-		if ( nextCache.length > maxSize ) {
-			nextCache.length = maxSize;
+			// Trim cache if exceeding max size
+			if ( nextCache.length > maxSize ) {
+				nextCache.length = maxSize;
+			}
+
+			cache = nextCache;
 		}
-
-		cache = nextCache;
 
 		return result[ 1 ];
 	}

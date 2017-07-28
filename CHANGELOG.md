@@ -1,5 +1,6 @@
 #### v2.1.0 (---)
 
+- Improved: Performance optimization on multiple subsequent selector calls with identical arguments
 - Fix: Use correct cache to determine cache update optimization
 
 #### v2.0.0 (2017-07-27)

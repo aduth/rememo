@@ -113,6 +113,12 @@ var index = function( selector, getDependants, options ) {
 		for ( i = 0, len = cache.length; i < len; i++ ) {
 			if ( ! result && index$1( cache[ i ][ 0 ], argsSansState ) ) {
 				result = cache[ i ];
+
+				// If result found at first entry, we won't need to update
+				// cache, so bail immediately
+				if ( 0 === i ) {
+					return result[ 1 ];
+				}
 			} else {
 				nextCache.push( cache[ i ] );
 			}

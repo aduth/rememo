@@ -1,9 +1,9 @@
-#### v2.0.0 (---)
+#### v2.0.0 (2017-07-27)
 
 - Breaking Change: The memoized function is no longer exposed. Calls to `selector.memoizedSelector.clear` should be updated to `selector.clear`.
 - New Feature: `createSelector` accepts an optional third argument to specify options, currently supporting `maxSize` (defaulting to `Infinity`)
 - Internal: Cache lookup and max size use an LRU (least recently used) policy to bias recent access, improving efficiency on subsequent calls with same arguments
-- Internal: Inline memoization with exposed selector to optimize arguments handling
+- Internal: Inline memoization with returned selector to optimize arguments handling
 
 #### v1.2.0 (2017-07-24)
 

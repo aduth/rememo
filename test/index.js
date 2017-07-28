@@ -27,7 +27,7 @@ describe( 'createSelector', () => {
 
 	it( 'exposes cache clearing method', () => {
 		assert.equal(
-			typeof getTasksByCompletion.memoizedSelector.clear,
+			typeof getTasksByCompletion.clear,
 			'function'
 		);
 	} );

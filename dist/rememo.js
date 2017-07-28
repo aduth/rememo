@@ -47,9 +47,7 @@ function identity( value ) {
  * @return {*}                      Selector return value
  */
 var index = function( selector, getDependants, options ) {
-	var cache = [],
-		lastDependants,
-		maxSize;
+	var cache, lastDependants, maxSize;
 
 	// Pull max size from options, defaulting to Infinity (no limit)
 	if ( options && options.maxSize > 0 ) {
@@ -64,30 +62,56 @@ var index = function( selector, getDependants, options ) {
 	}
 
 	/**
-	 * The memoized function, caching the result of the original function when
-	 * passed arguments. Ignores first argument in considering cache reuse.
-	 *
-	 * @param  {Object} source Source object for derivation
-	 * @param  {...*}   args   Additional arguments to pass to selector
-	 * @return {*}             Selector result
+	 * Resets memoization cache to empty.
 	 */
-	function memoizedSelector( /* state, ...args */ ) {
+	function clear() {
+		cache = [];
+	}
+
+	/**
+	 * The augmented selector call, considering first whether dependants have
+	 * changed before passing it to underlying memoize function.
+	 *
+	 * @param  {Object} source    Source object for derivation
+	 * @param  {...*}   extraArgs Additional arguments to pass to selector
+	 * @return {*}                Selector result
+	 */
+	function callSelector( /* state, ...extraArgs */ ) {
 		var len = arguments.length,
 			args = new Array( len ),
 			nextCache = [ undefined ],
-			i, result;
+			i, dependants, argsSansState, result;
 
-		// Copy arguments from first index. Using a loop is shown to be most
-		// performant in V8 to avoid arguments leaking deoptimization:
+		// Copy arguments. Using a loop is shown to be most performant in V8 to
+		// avoid arguments leaking deoptimization:
 		//
 		// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
-		for ( i = 1; i < len; i++ ) {
+		for ( i = 0; i < len; i++ ) {
 			args[ i ] = arguments[ i ];
 		}
 
+		// Retrieve and normalize dependants as array
+		dependants = getDependants.apply( null, args );
+		if ( ! Array.isArray( dependants ) ) {
+			dependants = [ dependants ];
+		}
+
+		// Perform shallow comparison on this pass with the last. If references
+		// have changed, destroy cache to recalculate memoized function result.
+		if ( lastDependants && ! index$1( dependants, lastDependants ) ) {
+			clear();
+		}
+
+		lastDependants = dependants;
+
+		// Create copy of arguments except first index, used as "key" for cache
+		// tuple. We don't consider first argument in sameness, so it's a waste
+		// of memory to maintain reference.
+		argsSansState = args.slice( 1 );
+
 		// Try to find an entry in cache which matches arguments.
 		for ( i = 0, len = cache.length; i < len; i++ ) {
-			if ( ! result && index$1( cache[ i ][ 0 ], args ) ) {
+			if ( ! result && index$1( cache[ i ][ 0 ], argsSansState ) ) {
 				result = cache[ i ];
 			} else {
 				nextCache.push( cache[ i ] );
@@ -96,7 +120,7 @@ var index = function( selector, getDependants, options ) {
 
 		// If no result found in cache, generate new
 		if ( ! result ) {
-			result = [ args, selector.apply( null, arguments ) ];
+			result = [ argsSansState, selector.apply( null, args ) ];
 		}
 
 		// Move result to top of stack (bias to recent access)
@@ -112,37 +136,8 @@ var index = function( selector, getDependants, options ) {
 		return result[ 1 ];
 	}
 
-	memoizedSelector.clear = function() {
-		cache = [];
-	};
-
-	/**
-	 * The augmented selector call, considering first whether dependants have
-	 * changed before passing it to underlying memoize function.
-	 *
-	 * @param  {Object} source Source object for derivation
-	 * @param  {...*}   args   Additional arguments to pass to selector
-	 * @return {*}             Selector result
-	 */
-	function callSelector( /* state, ...args */ ) {
-		// Retrieve and normalize dependants as array
-		var dependants = getDependants.apply( null, arguments );
-		if ( ! Array.isArray( dependants ) ) {
-			dependants = [ dependants ];
-		}
-
-		// Perform shallow comparison on this pass with the last. If references
-		// have changed, destroy cache to recalculate memoized function result.
-		if ( lastDependants && ! index$1( dependants, lastDependants ) ) {
-			memoizedSelector.clear();
-		}
-
-		lastDependants = dependants;
-
-		return memoizedSelector.apply( null, arguments );
-	}
-
-	callSelector.memoizedSelector = memoizedSelector;
+	callSelector.clear = clear;
+	clear();
 
 	return callSelector;
 };

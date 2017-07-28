@@ -7,8 +7,10 @@ describe( 'createSelector', () => {
 	const sandbox = sinon.sandbox.create();
 
 	const selector = sandbox.spy(
-		( state, isComplete ) => state.todo.filter(
-			( task ) => task.complete === isComplete
+		( state, isComplete, extra ) => (
+			state.todo.filter(
+				( task ) => task.complete === isComplete
+			).concat( extra || [] )
 		)
 	);
 
@@ -58,7 +60,7 @@ describe( 'createSelector', () => {
 		completed = getTasksByCompletion( state, true, obj );
 
 		sinon.assert.calledOnce( selector );
-		assert.deepEqual( completed, selector( state, true ) );
+		assert.deepEqual( completed, selector( state, true, obj ) );
 	} );
 
 	it( 'caches with maxSize', () => {
@@ -69,27 +71,29 @@ describe( 'createSelector', () => {
 		);
 
 		const state = getState();
+		const result = getTasksByCompletion( state, true );
+		selector.reset();
 
 		// cache MISS [ [ true, 1 ] ] (calls: 1)
-		getTasksByCompletion( state, true, 1 );
+		assert.deepEqual( getTasksByCompletion( state, true, 1 ), [ ...result, 1 ] );
 
 		// cache MISS [ [ true, 2 ], [ true, 1 ] ] (calls: 2)
-		getTasksByCompletion( state, true, 2 );
+		assert.deepEqual( getTasksByCompletion( state, true, 2 ), [ ...result, 2 ] );
 
 		// cache MISS [ [ true, 3 ], [ true, 2 ] ] (calls: 3)
-		getTasksByCompletion( state, true, 3 );
+		assert.deepEqual( getTasksByCompletion( state, true, 3 ), [ ...result, 3 ] );
 
 		// cache MISS [ [ true, 1 ], [ true, 3 ] ] (calls: 4)
-		getTasksByCompletion( state, true, 1 );
+		assert.deepEqual( getTasksByCompletion( state, true, 1 ), [ ...result, 1 ] );
 
 		// cache HIT [ [ true, 3 ], [ true, 1 ] ] (calls: 4)
-		getTasksByCompletion( state, true, 3 );
+		assert.deepEqual( getTasksByCompletion( state, true, 3 ), [ ...result, 3 ] );
 
 		// cache HIT [ [ true, 1 ], [ true, 3 ] ] (calls: 4)
-		getTasksByCompletion( state, true, 1 );
+		assert.deepEqual( getTasksByCompletion( state, true, 1 ), [ ...result, 1 ] );
 
 		// cache MISS [ [ true, 2 ], [ true, 1 ] ] (calls: 5)
-		getTasksByCompletion( state, true, 2 );
+		assert.deepEqual( getTasksByCompletion( state, true, 2 ), [ ...result, 2 ] );
 
 		sinon.assert.callCount( selector, 5 );
 	} );
@@ -114,7 +118,7 @@ describe( 'createSelector', () => {
 		completed = getTasksByCompletion( state, true, true );
 
 		sinon.assert.calledOnce( selector );
-		assert.deepEqual( completed, selector( state, true ) );
+		assert.deepEqual( completed, selector( state, true, true ) );
 	} );
 
 	it( 'returns the correct value of differing arguments', () => {
@@ -147,7 +151,7 @@ describe( 'createSelector', () => {
 		completed = getTasksByCompletion( state, true, obj );
 
 		sinon.assert.calledTwice( selector );
-		assert.deepEqual( completed, selector( state, true ) );
+		assert.deepEqual( completed, selector( state, true, obj ) );
 	} );
 
 	it( 'returns cache even if target object has changed reference', () => {

@@ -1,3 +1,7 @@
+#### v2.1.0 (---)
+
+- Fix: Use correct cache to determine cache update optimization
+
 #### v2.0.0 (2017-07-27)
 
 - Breaking Change: The memoized function is no longer exposed. Calls to `selector.memoizedSelector.clear` should be updated to `selector.clear`.

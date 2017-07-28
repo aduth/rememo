@@ -105,7 +105,7 @@ export default function( selector, getDependants, options ) {
 		}
 
 		// Only need to update cache if result wasn't already top entry
-		if ( nextCache[ 0 ] !== result ) {
+		if ( cache[ 0 ] !== result ) {
 			// Move result to top of stack (bias to recent access)
 			nextCache[ 0 ] = result;
 

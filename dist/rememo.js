@@ -129,18 +129,15 @@ var index = function( selector, getDependants, options ) {
 			result = [ argsSansState, selector.apply( null, args ) ];
 		}
 
-		// Only need to update cache if result wasn't already top entry
-		if ( cache[ 0 ] !== result ) {
-			// Move result to top of stack (bias to recent access)
-			nextCache[ 0 ] = result;
+		// Move result to top of stack (bias to recent access)
+		nextCache[ 0 ] = result;
 
-			// Trim cache if exceeding max size
-			if ( nextCache.length > maxSize ) {
-				nextCache.length = maxSize;
-			}
-
-			cache = nextCache;
+		// Trim cache if exceeding max size
+		if ( nextCache.length > maxSize ) {
+			nextCache.length = maxSize;
 		}
+
+		cache = nextCache;
 
 		return result[ 1 ];
 	}

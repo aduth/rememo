@@ -77,21 +77,12 @@ var index = function( selector, getDependants, options ) {
 	 * @return {*}                Selector result
 	 */
 	function callSelector( /* state, ...extraArgs */ ) {
-		var len = arguments.length,
-			args = new Array( len ),
-			nextCache = [ undefined ],
-			i, dependants, argsSansState, result;
-
-		// Copy arguments. Using a loop is shown to be most performant in V8 to
-		// avoid arguments leaking deoptimization:
-		//
-		// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
-		for ( i = 0; i < len; i++ ) {
-			args[ i ] = arguments[ i ];
-		}
+		var nextCache = [ undefined ],
+			argsSansState = new Array( arguments.length - 1 ),
+			i, len, dependants, result;
 
 		// Retrieve and normalize dependants as array
-		dependants = getDependants.apply( null, args );
+		dependants = getDependants.apply( null, arguments );
 		if ( ! Array.isArray( dependants ) ) {
 			dependants = [ dependants ];
 		}
@@ -106,8 +97,13 @@ var index = function( selector, getDependants, options ) {
 
 		// Create copy of arguments except first index, used as "key" for cache
 		// tuple. We don't consider first argument in sameness, so it's a waste
-		// of memory to maintain reference.
-		argsSansState = args.slice( 1 );
+		// of memory to maintain reference. Copying arguments using a loop is
+		// shown to be most performant in V8 to avoid deoptimization:
+		//
+		// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
+		for ( i = 1, len = arguments.length; i < len; i++ ) {
+			argsSansState[ i ] = arguments[ i ];
+		}
 
 		// Try to find an entry in cache which matches arguments.
 		for ( i = 0, len = cache.length; i < len; i++ ) {
@@ -126,7 +122,7 @@ var index = function( selector, getDependants, options ) {
 
 		// If no result found in cache, generate new
 		if ( ! result ) {
-			result = [ argsSansState, selector.apply( null, args ) ];
+			result = [ argsSansState, selector.apply( null, arguments ) ];
 		}
 
 		// Move result to top of stack (bias to recent access)

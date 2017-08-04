@@ -1,5 +1,6 @@
-#### v2.1.1 (---)
+#### v2.2.0 (---)
 
+- Improved: Performance optimization on creating argument cache
 - Fix: Skip impossible condition when deciding to surface result to top of cache
 
 #### v2.1.0 (2017-07-27)

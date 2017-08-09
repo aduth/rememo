@@ -1,4 +1,4 @@
-#### v2.3.0 (---)
+#### v2.3.0 (2017-08-08)
 
 - Improved: Significant performance optimizations by reimplementing cache as linked list stack. For more details and benchmarks, see [sister project "memize"](https://github.com/aduth/memize#benchmarks) from which the implementation is derived.
 

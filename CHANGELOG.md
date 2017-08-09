@@ -1,3 +1,7 @@
+#### v2.3.0 (---)
+
+- Improved: Significant performance optimizations by reimplementing cache as linked list stack. For more details and benchmarks, see [sister project "memize"](https://github.com/aduth/memize#benchmarks) from which the implementation is derived.
+
 #### v2.2.0 (2017-08-04)
 
 - Improved: Performance optimization on creating argument cache

@@ -28,13 +28,11 @@ function identity( value ) {
  * @return {*}                      Selector return value
  */
 export default function( selector, getDependants, options ) {
-	var cache, lastDependants, maxSize;
+	var maxSize, lastDependants, head, tail, size;
 
 	// Pull max size from options, defaulting to Infinity (no limit)
 	if ( options && options.maxSize > 0 ) {
 		maxSize = options.maxSize;
-	} else {
-		maxSize = Infinity;
 	}
 
 	// Use object source as dependant if getter not provided
@@ -46,7 +44,9 @@ export default function( selector, getDependants, options ) {
 	 * Resets memoization cache to empty.
 	 */
 	function clear() {
-		cache = [];
+		head = null;
+		tail = null;
+		size = 0;
 	}
 
 	/**
@@ -58,9 +58,8 @@ export default function( selector, getDependants, options ) {
 	 * @return {*}                Selector result
 	 */
 	function callSelector( /* state, ...extraArgs */ ) {
-		var nextCache = [ undefined ],
-			argsSansState = new Array( arguments.length - 1 ),
-			i, len, dependants, result;
+		var len = arguments.length,
+			node, i, args, dependants;
 
 		// Retrieve and normalize dependants as array
 		dependants = getDependants.apply( null, arguments );
@@ -76,47 +75,68 @@ export default function( selector, getDependants, options ) {
 
 		lastDependants = dependants;
 
-		// Create copy of arguments except first index, used as "key" for cache
-		// tuple. We don't consider first argument in sameness, so it's a waste
-		// of memory to maintain reference. Copying arguments using a loop is
-		// shown to be most performant in V8 to avoid deoptimization:
-		//
-		// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
-		for ( i = 1, len = arguments.length; i < len; i++ ) {
-			argsSansState[ i ] = arguments[ i ];
-		}
-
-		// Try to find an entry in cache which matches arguments.
-		for ( i = 0, len = cache.length; i < len; i++ ) {
-			if ( ! result && isShallowEqual( cache[ i ][ 0 ], argsSansState ) ) {
-				result = cache[ i ];
-
-				// If result found at first entry, we won't need to update
-				// cache, so bail immediately
-				if ( 0 === i ) {
-					return result[ 1 ];
+		node = head;
+		searchCache: while ( node ) {
+			// Check whether node arguments match arguments
+			for ( i = 1; i < len; i++ ) {
+				if ( node.args[ i ] !== arguments[ i ] ) {
+					node = node.next;
+					continue searchCache;
 				}
-			} else {
-				nextCache.push( cache[ i ] );
 			}
+
+			// At this point we can assume we've found a match
+
+			// Surface matched node to head if not already
+			if ( node !== head ) {
+				node.prev.next = node.next;
+				node.next = head;
+			}
+
+			// Return immediately
+			return node.val;
 		}
 
-		// If no result found in cache, generate new
-		if ( ! result ) {
-			result = [ argsSansState, selector.apply( null, arguments ) ];
+		// No cached value found. Continue to insertion phase:
+
+		// Create a copy of arguments (avoid leaking deoptimization). We could
+		// create this as len - 1 and assign from index one, but this approach
+		// avoids offsetting index in both this loop and the cache search above
+		args = new Array( len );
+		for ( i = 1; i < len; i++ ) {
+			args[ i ] = arguments[ i ];
 		}
 
-		// Move result to top of stack (bias to recent access)
-		nextCache[ 0 ] = result;
+		node = {
+			args: args,
 
-		// Trim cache if exceeding max size
-		if ( nextCache.length > maxSize ) {
-			nextCache.length = maxSize;
+			// Generate the result from original function
+			val: selector.apply( null, arguments )
+		};
+
+		// Don't need to check whether node is already head, since it would
+		// have been returned above already if it was
+
+		// Shift existing head down list
+		if ( head ) {
+			head.prev = node;
+			node.next = head;
+		} else {
+			// If no head, follows that there's no tail (at initial or reset)
+			tail = node;
 		}
 
-		cache = nextCache;
+		// Trim tail if we're reached max size and are pending cache insertion
+		if ( size === maxSize ) {
+			tail = tail.prev;
+			tail.next = null;
+		} else {
+			size++;
+		}
 
-		return result[ 1 ];
+		head = node;
+
+		return node.val;
 	}
 
 	callSelector.clear = clear;

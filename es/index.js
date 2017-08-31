@@ -87,13 +87,14 @@ export default function( selector, getDependants, options ) {
 
 			// At this point we can assume we've found a match
 
-			// Shift tail to previous
-			if ( node === tail ) {
-				tail = node.prev;
-			}
-
 			// Surface matched node to head if not already
 			if ( node !== head ) {
+				// As tail, shift to previous. Must only shift if not also
+				// head, since if both head and tail, there is no previous.
+				if ( node === tail ) {
+					tail = node.prev;
+				}
+
 				node.prev.next = node.next;
 				node.next = head;
 				node.prev = null;

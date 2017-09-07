@@ -1,3 +1,7 @@
+#### v2.3.3 (---)
+
+- Fix: Resolve infinite loop which can occur due to lingering references in recalling from previous cache
+
 #### v2.3.2 (2017-08-30)
 
 - Fix: Resolve error which can occur in certain conditions with `maxSize`

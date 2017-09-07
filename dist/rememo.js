@@ -114,7 +114,13 @@ var index = function( selector, getDependants, options ) {
 					tail = node.prev;
 				}
 
+				// Adjust siblings to point to each other. If node was tail,
+				// this also handles new tail's empty `next` assignment.
 				node.prev.next = node.next;
+				if ( node.next ) {
+					node.next.prev = node.prev;
+				}
+
 				node.next = head;
 				node.prev = null;
 				head.prev = node;

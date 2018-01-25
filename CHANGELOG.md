@@ -1,3 +1,7 @@
+#### v2.3.4 (2018-01-25)
+
+- Fix: Correctly skips incorrect cached value return on mismatched argument length
+
 #### v2.3.3 (2017-09-06)
 
 - Fix: Resolve infinite loop which can occur due to lingering references in recalling from previous cache

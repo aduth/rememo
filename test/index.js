@@ -7,7 +7,7 @@ describe( 'createSelector', () => {
 	const sandbox = sinon.sandbox.create();
 
 	const selector = sandbox.spy(
-		( state, isComplete, extra ) => (
+		( state, isComplete = false, extra ) => (
 			state.todo.filter(
 				( task ) => task.complete === isComplete
 			).concat( extra || [] )
@@ -168,5 +168,15 @@ describe( 'createSelector', () => {
 
 		sinon.assert.calledOnce( selector );
 		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
+	it( 'ensures equal argument length before returning cache', () => {
+		const state = getState();
+		let completed;
+		completed = getTasksByCompletion( state, true );
+		completed = getTasksByCompletion( state );
+
+		sinon.assert.calledTwice( selector );
+		assert.deepEqual( completed, selector( state ) );
 	} );
 } );

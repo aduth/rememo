@@ -92,13 +92,11 @@ export default function( selector, getDependants, options ) {
 		lastDependants = dependants;
 
 		node = head;
-		searchCache: while ( node ) {
+		while ( node ) {
 			// Check whether node arguments match arguments
-			for ( i = 1; i < len; i++ ) {
-				if ( node.args[ i ] !== arguments[ i ] ) {
-					node = node.next;
-					continue searchCache;
-				}
+			if ( ! isShallowEqual( node.args, args ) ) {
+				node = node.next;
+				continue;
 			}
 
 			// At this point we can assume we've found a match

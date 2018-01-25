@@ -57,12 +57,28 @@ export default function( selector, getDependants, options ) {
 	 * @param  {...*}   extraArgs Additional arguments to pass to selector
 	 * @return {*}                Selector result
 	 */
-	function callSelector( /* state, ...extraArgs */ ) {
+	function callSelector( /* source, ...extraArgs */ ) {
 		var len = arguments.length,
-			node, i, args, dependants;
+			node, i, argsWithSource, args, dependants;
+
+		// Create copies of arguments (avoid leaking deoptimization).
+		argsWithSource = new Array( len );
+		args = new Array( len - 1 );
+		for ( i = 0; i < len; i++ ) {
+			// Create one copy with source object intact, passed to dependants
+			// getter and original selector.
+			argsWithSource[ i ] = arguments[ i ];
+
+			// Another copy omits state, used in arguments comparison and in
+			// tracking arguments cache (avoid lingering reference to source
+			// in cache which could prevent garbage collection).
+			if ( i > 0 ) {
+				args[ i - 1 ] = arguments[ i ];
+			}
+		}
 
 		// Retrieve and normalize dependants as array
-		dependants = getDependants.apply( null, arguments );
+		dependants = getDependants.apply( null, argsWithSource );
 		if ( ! Array.isArray( dependants ) ) {
 			dependants = [ dependants ];
 		}
@@ -114,19 +130,11 @@ export default function( selector, getDependants, options ) {
 
 		// No cached value found. Continue to insertion phase:
 
-		// Create a copy of arguments (avoid leaking deoptimization). We could
-		// create this as len - 1 and assign from index one, but this approach
-		// avoids offsetting index in both this loop and the cache search above
-		args = new Array( len );
-		for ( i = 1; i < len; i++ ) {
-			args[ i ] = arguments[ i ];
-		}
-
 		node = {
 			args: args,
 
 			// Generate the result from original function
-			val: selector.apply( null, arguments )
+			val: selector.apply( null, argsWithSource )
 		};
 
 		// Don't need to check whether node is already head, since it would

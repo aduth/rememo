@@ -237,10 +237,12 @@ describe( 'createSelector', () => {
 		const file = IMPLEMENTATIONS[ name ];
 
 		context( name + ' WeakMap', () => {
-			let createSelector;
+			let implementation;
+			const createSelector = ( ...args ) => implementation( ...args );
+
 			before( () => {
 				delete require.cache[ require.resolve( '../' ) ];
-				createSelector = require( file );
+				implementation = require( file );
 			} );
 
 			test( createSelector );

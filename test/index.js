@@ -1,8 +1,7 @@
 const assert = require( 'assert' );
 const sinon = require( 'sinon' );
-const createSelector = require( '../' );
 
-describe( 'createSelector', () => {
+function test( createSelector ) {
 	let getTasksByCompletion;
 	const sandbox = sinon.sandbox.create();
 
@@ -146,6 +145,18 @@ describe( 'createSelector', () => {
 		assert.deepEqual( completed, selector( state, true ) );
 	} );
 
+	it( 'clears cache when primitive dependant changes', () => {
+		const getTasksByCompletionOnCount = createSelector( selector, ( state ) => state.ok );
+		const state = getState();
+		state.ok = false;
+		let completed = getTasksByCompletionOnCount( state, true );
+		state.ok = true;
+		completed = getTasksByCompletionOnCount( state, true );
+
+		sinon.assert.calledTwice( selector );
+		assert.deepEqual( completed, selector( state, true ) );
+	} );
+
 	it( 'clears cache when non-primitive argument reference changes', () => {
 		const state = getState();
 		let completed;
@@ -170,6 +181,41 @@ describe( 'createSelector', () => {
 		assert.deepEqual( completed, selector( state, true ) );
 	} );
 
+	it( 'deep caches on object dependants', () => {
+		const stateByDate = {
+			todos: {
+				'2018-01-01': [
+					{ text: 'Go to the gym', complete: true },
+					{ text: 'Try to spend time in the sunlight', complete: true }
+				],
+				'2018-01-02': [
+					{ text: 'Laundry must be done', complete: false }
+				]
+			}
+		};
+
+		const selectorByDate = sandbox.spy( ( state, date, isComplete = false ) => (
+			state.todos[ date ].filter( ( task ) => task.complete === isComplete )
+		) );
+
+		const getTasksByCompletionByDate = createSelector(
+			selectorByDate,
+			( state, date ) => state.todos[ date ]
+		);
+
+		getTasksByCompletionByDate( stateByDate, '2018-01-01' );
+		sinon.assert.calledOnce( selectorByDate );
+
+		getTasksByCompletionByDate( stateByDate, '2018-01-02' );
+		sinon.assert.calledTwice( selectorByDate );
+
+		getTasksByCompletionByDate( stateByDate, '2018-01-01' );
+		sinon.assert.calledTwice( selectorByDate );
+
+		getTasksByCompletionByDate( stateByDate, '2018-01-02' );
+		sinon.assert.calledTwice( selectorByDate );
+	} );
+
 	it( 'ensures equal argument length before returning cache', () => {
 		const state = getState();
 		let completed;
@@ -179,4 +225,23 @@ describe( 'createSelector', () => {
 		sinon.assert.calledTwice( selector );
 		assert.deepEqual( completed, selector( state ) );
 	} );
+}
+
+describe( 'createSelector', () => {
+	const IMPLEMENTATIONS = {
+		'native': '../',
+		polyfilled: '../polyfill'
+	};
+
+	for ( const name in IMPLEMENTATIONS ) {
+		const file = IMPLEMENTATIONS[ name ];
+
+		context( name + ' WeakMap', () => {
+			before( () => {
+				delete require.cache[ require.resolve( '../' ) ];
+			} );
+
+			test( require( file ) );
+		} );
+	}
 } );

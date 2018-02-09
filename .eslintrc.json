@@ -8,6 +8,9 @@
 		"node": true,
 		"mocha": true
 	},
+	"globals": {
+		"WeakMap": true
+	},
 	"rules": {
 		"array-bracket-spacing": [ "error", "always" ],
 		"brace-style": [ "error", "1tbs" ],

@@ -34,7 +34,7 @@ Rememo is published as an [npm](https://www.npmjs.com/) package:
 npm install rememo
 ```
 
-Browser-ready versions are also available in the [`dist`](https://github.com/aduth/rememo/tree/master/dist) directory, or from [unpkg](https://unpkg.com/rememo/dist/rememo.min.js). The browser-ready versions expose themselves on the global scope as `window.rememo`.
+Browser-ready versions are available from [unpkg](https://unpkg.com/rememo/dist/rememo.min.js). The browser-ready version assigns itself on the global scope as `window.rememo`.
 
 ```html
 <script src="https://unpkg.com/rememo/dist/rememo.min.js"></script>

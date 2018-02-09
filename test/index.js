@@ -237,11 +237,13 @@ describe( 'createSelector', () => {
 		const file = IMPLEMENTATIONS[ name ];
 
 		context( name + ' WeakMap', () => {
+			let createSelector;
 			before( () => {
 				delete require.cache[ require.resolve( '../' ) ];
+				createSelector = require( file );
 			} );
 
-			test( require( file ) );
+			test( createSelector );
 		} );
 	}
 } );

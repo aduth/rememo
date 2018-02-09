@@ -1,5 +1,5 @@
 export default {
-	entry: 'es/index.js',
+	entry: 'es/rememo.js',
 	dest: 'rememo.js',
 	format: 'cjs',
 	external: [

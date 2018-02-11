@@ -177,12 +177,13 @@ export default function( selector, getDependants ) {
 		// If not guaranteed uniqueness by dependants (primitive type or lack
 		// of WeakMap support), shallow compare against last dependants and, if
 		// references have changed, destroy cache to recalculate result.
-		if ( ! cache.isUniqueByDependants && cache.lastDependants &&
-				! isShallowEqual( dependants, cache.lastDependants ) ) {
-			cache.clear();
-		}
+		if ( ! cache.isUniqueByDependants ) {
+			if ( cache.lastDependants && ! isShallowEqual( dependants, cache.lastDependants ) ) {
+				cache.clear();
+			}
 
-		cache.lastDependants = dependants;
+			cache.lastDependants = dependants;
+		}
 
 		node = cache.head;
 		while ( node ) {

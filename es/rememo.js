@@ -32,7 +32,6 @@ function createCache() {
 	var cache = {
 		clear: function() {
 			cache.head = null;
-			cache.tail = null;
 		}
 	};
 
@@ -197,14 +196,7 @@ export default function( selector, getDependants ) {
 
 			// Surface matched node to head if not already
 			if ( node !== cache.head ) {
-				// As tail, shift to previous. Must only shift if not also
-				// head, since if both head and tail, there is no previous.
-				if ( node === cache.tail ) {
-					cache.tail = node.prev;
-				}
-
-				// Adjust siblings to point to each other. If node was tail,
-				// this also handles new tail's empty `next` assignment.
+				// Adjust siblings to point to each other.
 				node.prev.next = node.next;
 				if ( node.next ) {
 					node.next.prev = node.prev;
@@ -236,9 +228,6 @@ export default function( selector, getDependants ) {
 		if ( cache.head ) {
 			cache.head.prev = node;
 			node.next = cache.head;
-		} else {
-			// If no head, follows that there's no tail (at initial or reset)
-			cache.tail = node;
 		}
 
 		cache.head = node;

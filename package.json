@@ -41,7 +41,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "core-js": "^2.5.3",
     "shallow-equal": "^1.0.0"
   },
   "devDependencies": {

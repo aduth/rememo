@@ -33,12 +33,8 @@ function createCache() {
 		clear: function() {
 			cache.head = null;
 			cache.tail = null;
-			cache.size = 0;
 		}
 	};
-
-	// Initialize cache.
-	cache.clear();
 
 	return cache;
 }
@@ -55,18 +51,12 @@ function createCache() {
  * @param  {Function} getDependants Dependant getter returning an immutable
  *                                  reference or array of reference used in
  *                                  cache bust consideration
- * @param  {?Object}  options       Selector options
- * @return {*}                      Selector return value
+ * @return {Function}               Memoized selector
  */
-export default function( selector, getDependants, options ) {
+export default function( selector, getDependants ) {
 	var LEAF_KEY = {},
 		hasWeakMap = typeof WeakMap !== 'undefined',
-		rootCache, getCache, maxSize;
-
-	// Pull max size from options, defaulting to Infinity (no limit)
-	if ( options && options.maxSize > 0 ) {
-		maxSize = options.maxSize;
-	}
+		rootCache, getCache;
 
 	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {
@@ -249,14 +239,6 @@ export default function( selector, getDependants, options ) {
 		} else {
 			// If no head, follows that there's no tail (at initial or reset)
 			cache.tail = node;
-		}
-
-		// Trim tail if we're reached max size and are pending cache insertion
-		if ( cache.size === maxSize ) {
-			cache.tail = cache.tail.prev;
-			cache.tail.next = null;
-		} else {
-			cache.size++;
 		}
 
 		cache.head = node;

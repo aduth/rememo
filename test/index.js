@@ -68,46 +68,6 @@ function test( createSelector, WeakMapImpl ) {
 		assert.deepEqual( completed, selector( state, true, obj ) );
 	} );
 
-	it( 'caches with maxSize', () => {
-		getTasksByCompletion = createSelector(
-			selector,
-			( state ) => state.todo,
-			{ maxSize: 2 }
-		);
-
-		const state = getState();
-		const result = getTasksByCompletion( state, true );
-		selector.reset();
-
-		// cache MISS [ [ true, 1 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 1 ), [ ...result, 1 ] );
-		sinon.assert.callCount( selector, 1 );
-
-		// cache MISS [ [ true, 2 ], [ true, 1 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 2 ), [ ...result, 2 ] );
-		sinon.assert.callCount( selector, 2 );
-
-		// cache MISS [ [ true, 3 ], [ true, 2 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 3 ), [ ...result, 3 ] );
-		sinon.assert.callCount( selector, 3 );
-
-		// cache MISS [ [ true, 1 ], [ true, 3 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 1 ), [ ...result, 1 ] );
-		sinon.assert.callCount( selector, 4 );
-
-		// cache HIT [ [ true, 3 ], [ true, 1 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 3 ), [ ...result, 3 ] );
-		sinon.assert.callCount( selector, 4 );
-
-		// cache HIT [ [ true, 1 ], [ true, 3 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 1 ), [ ...result, 1 ] );
-		sinon.assert.callCount( selector, 4 );
-
-		// cache MISS [ [ true, 2 ], [ true, 1 ] ]
-		assert.deepEqual( getTasksByCompletion( state, true, 2 ), [ ...result, 2 ] );
-		sinon.assert.callCount( selector, 5 );
-	} );
-
 	it( 'defaults to caching on entire state object', () => {
 		const getTasksByCompletionOnState = createSelector( selector );
 		let state = getState();

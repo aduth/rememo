@@ -52,10 +52,7 @@ Rememo's default export is a function:
 ```js
 createSelector(
 	selector: Function, 
-	getDependants: Function,
-	options: ?{
-		maxSize?: number
-	}
+	getDependants: Function
 ): Function
 ```
 
@@ -66,10 +63,6 @@ memoizedSelector( source: Object, ...args: mixed ): mixed
 ```
 
 It's expected that the first argument to the memoized function is the source from which the selector operates. It is ignored when considering whether the argument result has already been cached.
-
-The optional `options` argument supports the following properties:
-
-- `maxSize`: Limit the size of the internal cache
 
 ## Motivation
 

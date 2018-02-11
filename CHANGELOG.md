@@ -1,6 +1,7 @@
 #### v2.4.0 (---)
 
 - Improved: Now uses `WeakMap` when available and when possible to cache per set of dependants. This also results in improved cache hit rates for dependants derived from getter arguments.
+- Removed: `options.maxSize` is no longer supported. The options argument, if passed, is now simply ignored.
 
 #### v2.3.4 (2018-01-25)
 

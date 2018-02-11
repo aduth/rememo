@@ -63,6 +63,16 @@ export default function( selector, getDependants, options ) {
 		hasWeakMap = typeof WeakMap !== 'undefined',
 		rootCache, getCache, maxSize;
 
+	// Pull max size from options, defaulting to Infinity (no limit)
+	if ( options && options.maxSize > 0 ) {
+		maxSize = options.maxSize;
+	}
+
+	// Use object source as dependant if getter not provided
+	if ( ! getDependants ) {
+		getDependants = identity;
+	}
+
 	/**
 	 * Returns the root cache. If WeakMap is supported, this is assigned to the
 	 * root WeakMap cache set, otherwise it is a shared instance of the default
@@ -131,16 +141,6 @@ export default function( selector, getDependants, options ) {
 
 	// Assign cache handler by availability of WeakMap
 	getCache = hasWeakMap ? getWeakMapCache : getRootCache;
-
-	// Pull max size from options, defaulting to Infinity (no limit)
-	if ( options && options.maxSize > 0 ) {
-		maxSize = options.maxSize;
-	}
-
-	// Use object source as dependant if getter not provided
-	if ( ! getDependants ) {
-		getDependants = identity;
-	}
 
 	/**
 	 * Resets root memoization cache.

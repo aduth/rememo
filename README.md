@@ -45,41 +45,6 @@ var createSelector = window.rememo;
 </script>
 ```
 
-## Requirements
-
-Rememo uses [`WeakMap`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap) to improve optimization of cached selectors. Since `WeakMap` is not supported in legacy browsers (notably Internet Explorer), you will need to either provide your own polyfill or use Rememo's polyfilled variation if you must support these browsers.
-
-_Script:_
-
-You can include your own polyfill script prior to loading Rememo, or use a service like [polyfill.io](https://polyfill.io/):
-
-```html
-<script src="https://cdn.polyfill.io/v2/polyfill.js?features=WeakMap"></script>
-<script src="https://unpkg.com/rememo/dist/rememo.min.js"></script>
-```
-
-Using polyfill.io has the advantage of not replacing the browser's own implementation for visitors who are already using a modern browser. The browser native implementation tends to perform better than the polyfilled version.
-
-_Babel:_
-
-Use [`babel-polyfill`](https://babeljs.io/docs/usage/polyfill/).
-
-_Webpack:_
-
-Use [`resolve.alias`](https://webpack.js.org/configuration/resolve/) to redirect `rememo` module imports to the polyfilled version:
-
-```js
-module.exports = {
-	// ...
-
-	resolve: {
-		alias: {
-			'rememo': 'rememo/polyfill'
-		}
-	}
-};
-```
-
 ## API
 
 Rememo's default export is a function:

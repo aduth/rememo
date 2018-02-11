@@ -1,9 +1,15 @@
 const assert = require( 'assert' );
 const sinon = require( 'sinon' );
 
-function test( createSelector ) {
+function test( createSelector, WeakMapImpl ) {
 	let getTasksByCompletion;
 	const sandbox = sinon.sandbox.create();
+
+	function ifWeakMapIt( ...args ) {
+		if ( typeof WeakMapImpl !== 'undefined' ) {
+			return it( ...args );
+		}
+	}
 
 	const selector = sandbox.spy(
 		( state, isComplete = false, extra ) => (
@@ -181,7 +187,7 @@ function test( createSelector ) {
 		assert.deepEqual( completed, selector( state, true ) );
 	} );
 
-	it( 'deep caches on object dependants', () => {
+	ifWeakMapIt( 'deep caches on object dependants', () => {
 		const stateByDate = {
 			todos: {
 				'2018-01-01': [
@@ -228,24 +234,32 @@ function test( createSelector ) {
 }
 
 describe( 'createSelector', () => {
-	const IMPLEMENTATIONS = {
-		'native': '../',
-		polyfilled: '../polyfill'
+	const _WeakMap = WeakMap;
+
+	const WEAKMAP_SUPPORT = {
+		'with': _WeakMap,
+		without: undefined
 	};
 
-	for ( const name in IMPLEMENTATIONS ) {
-		const file = IMPLEMENTATIONS[ name ];
+	for ( const name in WEAKMAP_SUPPORT ) {
+		const WeakMapImpl = WEAKMAP_SUPPORT[ name ];
 
 		context( name + ' WeakMap', () => {
 			let implementation;
 			const createSelector = ( ...args ) => implementation( ...args );
 
 			before( () => {
+				global.WeakMap = WeakMapImpl;
+
 				delete require.cache[ require.resolve( '../' ) ];
-				implementation = require( file );
+				implementation = require( '../' );
 			} );
 
-			test( createSelector );
+			after( () => {
+				global.WeakMap = _WeakMap;
+			} );
+
+			test( createSelector, WeakMapImpl );
 		} );
 	}
 } );

@@ -24,6 +24,26 @@ function isObjectLike( value ) {
 }
 
 /**
+ * Creates and returns a new cache object.
+ *
+ * @return {Object} Cache object.
+ */
+function createCache() {
+	var cache = {
+		clear: function() {
+			cache.head = null;
+			cache.tail = null;
+			cache.size = 0;
+		}
+	};
+
+	// Initialize cache.
+	cache.clear();
+
+	return cache;
+}
+
+/**
  * Returns a memoized selector function. The getDependants function argument is
  * called before the memoized selector and is expected to return an immutable
  * reference or array of references on which the selector depends for computing
@@ -40,7 +60,19 @@ function isObjectLike( value ) {
  */
 export default function( selector, getDependants, options ) {
 	var LEAF_KEY = {},
-		rootCache, maxSize;
+		hasWeakMap = typeof WeakMap !== 'undefined',
+		rootCache, getCache, maxSize;
+
+	/**
+	 * Returns the root cache. If WeakMap is supported, this is assigned to the
+	 * root WeakMap cache set, otherwise it is a shared instance of the default
+	 * cache object.
+	 *
+	 * @return {(WeakMap|Object)} Root cache object
+	 */
+	function getRootCache() {
+		return rootCache;
+	}
 
 	/**
 	 * Returns the cache for a given dependants array. When possible, a WeakMap
@@ -60,8 +92,9 @@ export default function( selector, getDependants, options ) {
 	 *
 	 * @return {Object} Cache object
 	 */
-	function getCache( dependants ) {
+	function getWeakMapCache( dependants ) {
 		var caches = rootCache,
+			isUniqueByDependants = true,
 			i, dependant, map, cache;
 
 		for ( i = 0; i < dependants.length; i++ ) {
@@ -69,6 +102,7 @@ export default function( selector, getDependants, options ) {
 
 			// Can only compose WeakMap from object-like key.
 			if ( ! isObjectLike( dependant ) ) {
+				isUniqueByDependants = false;
 				break;
 			}
 
@@ -87,22 +121,16 @@ export default function( selector, getDependants, options ) {
 		// We use an arbitrary (but consistent) object as key for the last item
 		// in the WeakMap to serve as our running cache.
 		if ( ! caches.has( LEAF_KEY ) ) {
-			cache = {
-				clear: function() {
-					cache.head = null;
-					cache.tail = null;
-					cache.size = 0;
-				}
-			};
-
-			// Initialize cache.
-			cache.clear();
-
+			cache = createCache();
+			cache.isUniqueByDependants = isUniqueByDependants;
 			caches.set( LEAF_KEY, cache );
 		}
 
 		return caches.get( LEAF_KEY );
 	}
+
+	// Assign cache handler by availability of WeakMap
+	getCache = hasWeakMap ? getWeakMapCache : getRootCache;
 
 	// Pull max size from options, defaulting to Infinity (no limit)
 	if ( options && options.maxSize > 0 ) {
@@ -118,7 +146,7 @@ export default function( selector, getDependants, options ) {
 	 * Resets root memoization cache.
 	 */
 	function clear() {
-		rootCache = new WeakMap();
+		rootCache = hasWeakMap ? new WeakMap() : createCache();
 	}
 
 	/**
@@ -157,9 +185,11 @@ export default function( selector, getDependants, options ) {
 
 		cache = getCache( dependants );
 
-		// Perform shallow comparison on this pass with the last. If references
-		// have changed, destroy cache to recalculate memoized function result.
-		if ( cache.lastDependants && ! isShallowEqual( dependants, cache.lastDependants ) ) {
+		// If not guaranteed uniqueness by dependants (primitive type or lack
+		// of WeakMap support), shallow compare against last dependants and, if
+		// references have changed, destroy cache to recalculate result.
+		if ( ! cache.isUniqueByDependants && cache.lastDependants &&
+				! isShallowEqual( dependants, cache.lastDependants ) ) {
 			cache.clear();
 		}
 

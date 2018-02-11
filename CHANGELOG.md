@@ -1,7 +1,6 @@
-#### v3.0.0 (---)
+#### v2.4.0 (---)
 
-- Breaking: Rememo now requires `WeakMap` or equivalent polyfill. See [Requirements](https://github.com/aduth/rememo#requirements) for more information.
-- Improved: Now uses `WeakMap` to cache per set of dependants when possible to use dependant as key of a WeakMap (object or array). This also results in improved cache hit rates for dependants derived from getter arguments.
+- Improved: Now uses `WeakMap` when available and when possible to cache per set of dependants. This also results in improved cache hit rates for dependants derived from getter arguments.
 
 #### v2.3.4 (2018-01-25)
 

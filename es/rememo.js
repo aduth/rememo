@@ -2,6 +2,22 @@
 
 import isShallowEqual from 'shallow-equal/arrays';
 
+var LEAF_KEY, hasWeakMap;
+
+/**
+ * Arbitrary value used as key for referencing cache object in WeakMap tree.
+ *
+ * @type {Object}
+ */
+LEAF_KEY = {};
+
+/**
+ * Whether environment supports WeakMap.
+ *
+ * @type {Boolean}
+ */
+hasWeakMap = typeof WeakMap !== 'undefined';
+
 /**
  * Returns the first argument.
  *
@@ -53,9 +69,7 @@ function createCache() {
  * @return {Function}               Memoized selector
  */
 export default function( selector, getDependants ) {
-	var LEAF_KEY = {},
-		hasWeakMap = typeof WeakMap !== 'undefined',
-		rootCache, getCache;
+	var rootCache, getCache;
 
 	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {

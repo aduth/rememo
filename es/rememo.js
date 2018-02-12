@@ -2,6 +2,22 @@
 
 import isShallowEqual from 'shallow-equal/arrays';
 
+var LEAF_KEY, hasWeakMap;
+
+/**
+ * Arbitrary value used as key for referencing cache object in WeakMap tree.
+ *
+ * @type {Object}
+ */
+LEAF_KEY = {};
+
+/**
+ * Whether environment supports WeakMap.
+ *
+ * @type {Boolean}
+ */
+hasWeakMap = typeof WeakMap !== 'undefined';
+
 /**
  * Returns the first argument.
  *
@@ -10,6 +26,32 @@ import isShallowEqual from 'shallow-equal/arrays';
  */
 function identity( value ) {
 	return value;
+}
+
+/**
+ * Returns true if the value passed is object-like, or false otherwise. A value
+ * is object-like if it can support property assignment, e.g. object or array.
+ *
+ * @param  {*}       value Value to test
+ * @return {Boolean}       Whether value is object-like
+ */
+function isObjectLike( value ) {
+	return !! value && 'object' === typeof value;
+}
+
+/**
+ * Creates and returns a new cache object.
+ *
+ * @return {Object} Cache object.
+ */
+function createCache() {
+	var cache = {
+		clear: function() {
+			cache.head = null;
+		}
+	};
+
+	return cache;
 }
 
 /**
@@ -24,16 +66,10 @@ function identity( value ) {
  * @param  {Function} getDependants Dependant getter returning an immutable
  *                                  reference or array of reference used in
  *                                  cache bust consideration
- * @param  {?Object}  options       Selector options
- * @return {*}                      Selector return value
+ * @return {Function}               Memoized selector
  */
-export default function( selector, getDependants, options ) {
-	var maxSize, lastDependants, head, tail, size;
-
-	// Pull max size from options, defaulting to Infinity (no limit)
-	if ( options && options.maxSize > 0 ) {
-		maxSize = options.maxSize;
-	}
+export default function( selector, getDependants ) {
+	var rootCache, getCache;
 
 	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {
@@ -41,12 +77,79 @@ export default function( selector, getDependants, options ) {
 	}
 
 	/**
-	 * Resets memoization cache to empty.
+	 * Returns the root cache. If WeakMap is supported, this is assigned to the
+	 * root WeakMap cache set, otherwise it is a shared instance of the default
+	 * cache object.
+	 *
+	 * @return {(WeakMap|Object)} Root cache object
+	 */
+	function getRootCache() {
+		return rootCache;
+	}
+
+	/**
+	 * Returns the cache for a given dependants array. When possible, a WeakMap
+	 * will be used to create a unique cache for each set of dependants. This
+	 * is feasible due to the nature of WeakMap in allowing garbage collection
+	 * to occur on entries where the key object is no longer referenced. Since
+	 * WeakMap requires the key to be an object, this is only possible when the
+	 * dependant is object-like. The root cache is created as a hierarchy where
+	 * each top-level key is the first entry in a dependants set, the value a
+	 * WeakMap where each key is the next dependant, and so on. This continues
+	 * so long as the dependants are object-like. If no dependants are object-
+	 * like, then the cache is shared across all invocations.
+	 *
+	 * @see isObjectLike
+	 *
+	 * @param {Array} dependants Selector dependants
+	 *
+	 * @return {Object} Cache object
+	 */
+	function getWeakMapCache( dependants ) {
+		var caches = rootCache,
+			isUniqueByDependants = true,
+			i, dependant, map, cache;
+
+		for ( i = 0; i < dependants.length; i++ ) {
+			dependant = dependants[ i ];
+
+			// Can only compose WeakMap from object-like key.
+			if ( ! isObjectLike( dependant ) ) {
+				isUniqueByDependants = false;
+				break;
+			}
+
+			// Does current segment of cache already have a WeakMap?
+			if ( caches.has( dependant ) ) {
+				// Traverse into nested WeakMap.
+				caches = caches.get( dependant );
+			} else {
+				// Create, set, and traverse into a new one.
+				map = new WeakMap();
+				caches.set( dependant, map );
+				caches = map;
+			}
+		}
+
+		// We use an arbitrary (but consistent) object as key for the last item
+		// in the WeakMap to serve as our running cache.
+		if ( ! caches.has( LEAF_KEY ) ) {
+			cache = createCache();
+			cache.isUniqueByDependants = isUniqueByDependants;
+			caches.set( LEAF_KEY, cache );
+		}
+
+		return caches.get( LEAF_KEY );
+	}
+
+	// Assign cache handler by availability of WeakMap
+	getCache = hasWeakMap ? getWeakMapCache : getRootCache;
+
+	/**
+	 * Resets root memoization cache.
 	 */
 	function clear() {
-		head = null;
-		tail = null;
-		size = 0;
+		rootCache = hasWeakMap ? new WeakMap() : createCache();
 	}
 
 	/**
@@ -59,7 +162,7 @@ export default function( selector, getDependants, options ) {
 	 */
 	function callSelector( /* source, ...extraArgs */ ) {
 		var len = arguments.length,
-			node, i, argsWithSource, args, dependants;
+			cache, node, i, argsWithSource, args, dependants;
 
 		// Create copies of arguments (avoid leaking deoptimization).
 		argsWithSource = new Array( len );
@@ -83,15 +186,20 @@ export default function( selector, getDependants, options ) {
 			dependants = [ dependants ];
 		}
 
-		// Perform shallow comparison on this pass with the last. If references
-		// have changed, destroy cache to recalculate memoized function result.
-		if ( lastDependants && ! isShallowEqual( dependants, lastDependants ) ) {
-			clear();
+		cache = getCache( dependants );
+
+		// If not guaranteed uniqueness by dependants (primitive type or lack
+		// of WeakMap support), shallow compare against last dependants and, if
+		// references have changed, destroy cache to recalculate result.
+		if ( ! cache.isUniqueByDependants ) {
+			if ( cache.lastDependants && ! isShallowEqual( dependants, cache.lastDependants ) ) {
+				cache.clear();
+			}
+
+			cache.lastDependants = dependants;
 		}
 
-		lastDependants = dependants;
-
-		node = head;
+		node = cache.head;
 		while ( node ) {
 			// Check whether node arguments match arguments
 			if ( ! isShallowEqual( node.args, args ) ) {
@@ -102,24 +210,17 @@ export default function( selector, getDependants, options ) {
 			// At this point we can assume we've found a match
 
 			// Surface matched node to head if not already
-			if ( node !== head ) {
-				// As tail, shift to previous. Must only shift if not also
-				// head, since if both head and tail, there is no previous.
-				if ( node === tail ) {
-					tail = node.prev;
-				}
-
-				// Adjust siblings to point to each other. If node was tail,
-				// this also handles new tail's empty `next` assignment.
+			if ( node !== cache.head ) {
+				// Adjust siblings to point to each other.
 				node.prev.next = node.next;
 				if ( node.next ) {
 					node.next.prev = node.prev;
 				}
 
-				node.next = head;
+				node.next = cache.head;
 				node.prev = null;
-				head.prev = node;
-				head = node;
+				cache.head.prev = node;
+				cache.head = node;
 			}
 
 			// Return immediately
@@ -139,23 +240,12 @@ export default function( selector, getDependants, options ) {
 		// have been returned above already if it was
 
 		// Shift existing head down list
-		if ( head ) {
-			head.prev = node;
-			node.next = head;
-		} else {
-			// If no head, follows that there's no tail (at initial or reset)
-			tail = node;
+		if ( cache.head ) {
+			cache.head.prev = node;
+			node.next = cache.head;
 		}
 
-		// Trim tail if we're reached max size and are pending cache insertion
-		if ( size === maxSize ) {
-			tail = tail.prev;
-			tail.next = null;
-		} else {
-			size++;
-		}
-
-		head = node;
+		cache.head = node;
 
 		return node.val;
 	}

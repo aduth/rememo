@@ -16,7 +16,7 @@ const getTasksByCompletion = createSelector(
 	),
 
 	// The reference(s) upon which the computation depends:
-	( state ) => state.todo
+	( state ) => [ state.todo ]
 );
 
 // The selector will only calculate the return value once so long as the state
@@ -99,7 +99,7 @@ const getTasksByCompletion = createSelector(
 	( state, isComplete ) => state.todo.filter(
 		( task ) => task.complete === isComplete
 	),
-	( state ) => state.todo
+	( state ) => [ state.todo ]
 );
 ```
 

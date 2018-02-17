@@ -1,4 +1,4 @@
-#### v3.0.0 (TBD)
+#### v3.0.0 (2018-02-17)
 
 - Breaking: `getDependants` (the second argument) must return an array. Per the below added feature, this has been done in an effort to to reduce developer burden in normalizing dependants reuse as arrays.
 - New: The created selector exposes `getDependants` function as a property. Refer to [README.md](https://github.com/aduth/rememo#api) for usage.

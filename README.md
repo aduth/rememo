@@ -134,6 +134,6 @@ Rememo instead encourages you to consider the derivation first-and-foremost with
 
 ## License
 
-Copyright 2017 Andrew Duthie
+Copyright 2018 Andrew Duthie
 
 Released under the [MIT License](https://github.com/aduth/rememo/tree/master/LICENSE.md).

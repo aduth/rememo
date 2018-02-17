@@ -10,8 +10,10 @@
     "es"
   ],
   "scripts": {
-    "pretest": "npm run build:cjs",
-    "test": "mocha",
+    "test:lint": "eslint .",
+    "pretest:unit": "npm run build:cjs",
+    "test:unit": "mocha",
+    "test": "npm-run-all --parallel test:*",
     "build:iife": "rollup -c rollup.iife.config.js",
     "postbuild:iife": "npm run uglify",
     "build:cjs": "rollup -c rollup.cjs.config.js",

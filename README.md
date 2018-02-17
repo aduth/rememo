@@ -90,6 +90,8 @@ function getTasksByCompletion( state, isComplete ) {
 
 This works well enough and requires no additional tools, but you'll observe that the filtering we perform on the set of to-do tasks could become costly if we were to have thousands of tasks. And this is just a simple example; real-world use cases could involve far more expensive computation. Add to this the very real likelihood that our application might call this function many times even when our to-do set has not changed.
 
+Furthermore, when used in combination with [`React.PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent) or [`react-redux`](https://github.com/reactjs/react-redux)'s `connect` — which creates pure components by default — it is advisable to pass unchanging object and array references as props on subsequent renders. A selector which returns a new reference on each invocation (as occurs with `Array#map` or `Array#filter`), your component will needlessly render even if the underlying data does not change.
+
 This is where Rememo comes in: a Rememo selector will cache the resulting value so long as the references upon which it depends have not changed. This works particularly well for immutable data structures, where we can perform a trivial strict equality comparison (`===`) to determine whether state has changed. Without guaranteed immutability, equality can only be known by deeply traversing the object structure, an operation which in many cases is far more costly than the original computation.
 
 In our above example, we know the value of the function will only change if the set of to-do's has changed. It's in Rememo's second argument that we describe this dependency:

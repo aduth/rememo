@@ -1,3 +1,7 @@
+#### v2.4.1 (TBD)
+
+- Improved: Minor size and performance optimization on cache arguments handling.
+
 #### v2.4.0 (2018-02-11)
 
 - Improved: Now uses `WeakMap` when available and when possible to cache per set of dependants. This also results in improved cache hit rates for dependants derived from getter arguments.

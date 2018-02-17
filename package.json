@@ -40,9 +40,6 @@
     "cache"
   ],
   "license": "MIT",
-  "dependencies": {
-    "shallow-equal": "^1.0.0"
-  },
   "devDependencies": {
     "eslint": "^3.19.0",
     "mocha": "^3.4.2",

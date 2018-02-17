@@ -1,7 +1,5 @@
 'use strict';
 
-import isShallowEqual from 'shallow-equal/arrays';
-
 var LEAF_KEY, hasWeakMap;
 
 /**
@@ -52,6 +50,32 @@ function createCache() {
 	};
 
 	return cache;
+}
+
+/**
+ * Returns true if entries within the two arrays are strictly equal by
+ * reference from a starting index.
+ *
+ * @param {Array}  a         First array.
+ * @param {Array}  b         Second array.
+ * @param {Number} fromIndex Index from which to start comparison.
+ *
+ * @return {Boolean} Whether arrays are shallowly equal.
+ */
+function isShallowEqual( a, b, fromIndex ) {
+	var i;
+
+	if ( a.length !== b.length ) {
+		return false;
+	}
+
+	for ( i = fromIndex; i < a.length; i++ ) {
+		if ( a[ i ] !== b[ i ] ) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**
@@ -162,26 +186,16 @@ export default function( selector, getDependants ) {
 	 */
 	function callSelector( /* source, ...extraArgs */ ) {
 		var len = arguments.length,
-			cache, node, i, argsWithSource, args, dependants;
+			cache, node, i, args, dependants;
 
-		// Create copies of arguments (avoid leaking deoptimization).
-		argsWithSource = new Array( len );
-		args = new Array( len - 1 );
+		// Create copy of arguments (avoid leaking deoptimization).
+		args = new Array( len );
 		for ( i = 0; i < len; i++ ) {
-			// Create one copy with source object intact, passed to dependants
-			// getter and original selector.
-			argsWithSource[ i ] = arguments[ i ];
-
-			// Another copy omits state, used in arguments comparison and in
-			// tracking arguments cache (avoid lingering reference to source
-			// in cache which could prevent garbage collection).
-			if ( i > 0 ) {
-				args[ i - 1 ] = arguments[ i ];
-			}
+			args[ i ] = arguments[ i ];
 		}
 
 		// Retrieve and normalize dependants as array
-		dependants = getDependants.apply( null, argsWithSource );
+		dependants = getDependants.apply( null, args );
 		if ( ! Array.isArray( dependants ) ) {
 			dependants = [ dependants ];
 		}
@@ -192,7 +206,7 @@ export default function( selector, getDependants ) {
 		// of WeakMap support), shallow compare against last dependants and, if
 		// references have changed, destroy cache to recalculate result.
 		if ( ! cache.isUniqueByDependants ) {
-			if ( cache.lastDependants && ! isShallowEqual( dependants, cache.lastDependants ) ) {
+			if ( cache.lastDependants && ! isShallowEqual( dependants, cache.lastDependants, 0 ) ) {
 				cache.clear();
 			}
 
@@ -202,7 +216,7 @@ export default function( selector, getDependants ) {
 		node = cache.head;
 		while ( node ) {
 			// Check whether node arguments match arguments
-			if ( ! isShallowEqual( node.args, args ) ) {
+			if ( ! isShallowEqual( node.args, args, 1 ) ) {
 				node = node.next;
 				continue;
 			}
@@ -230,11 +244,13 @@ export default function( selector, getDependants ) {
 		// No cached value found. Continue to insertion phase:
 
 		node = {
-			args: args,
-
 			// Generate the result from original function
-			val: selector.apply( null, argsWithSource )
+			val: selector.apply( null, args )
 		};
+
+		// Avoid including the source object in the cache.
+		args[ 0 ] = null;
+		node.args = args;
 
 		// Don't need to check whether node is already head, since it would
 		// have been returned above already if it was

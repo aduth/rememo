@@ -21,7 +21,7 @@ hasWeakMap = typeof WeakMap !== 'undefined';
  *
  * @param  {*} value Value to return.
  *
- * @return {*}       Value returned.
+ * @return {*} Value returned.
  */
 function identity( value ) {
 	return value;
@@ -31,9 +31,9 @@ function identity( value ) {
  * Returns true if the value passed is object-like, or false otherwise. A value
  * is object-like if it can support property assignment, e.g. object or array.
  *
- * @param  {*}       value Value to test.
+ * @param  {*} value Value to test.
  *
- * @return {boolean}       Whether value is object-like.
+ * @return {boolean} Whether value is object-like.
  */
 function isObjectLike( value ) {
 	return !! value && 'object' === typeof value;

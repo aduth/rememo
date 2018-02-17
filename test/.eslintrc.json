@@ -1,12 +1,13 @@
 {
 	"root": true,
-	"extends": "@aduth/eslint-config/es5",
+	"extends": "@aduth/eslint-config",
 	"parserOptions": {
-		"ecmaVersion": 5,
+		"ecmaVersion": 6,
 		"sourceType": "module"
 	},
 	"env": {
-		"node": true
+		"node": true,
+		"mocha": true
 	},
 	"globals": {
 		"WeakMap": true

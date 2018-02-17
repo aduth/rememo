@@ -23,8 +23,8 @@ function test( createSelector, WeakMapImpl ) {
 		todo: [
 			{ text: 'Go to the gym', complete: true },
 			{ text: 'Try to spend time in the sunlight', complete: false },
-			{ text: 'Laundry must be done', complete: true }
-		]
+			{ text: 'Laundry must be done', complete: true },
+		],
 	} );
 
 	beforeEach( () => {
@@ -152,12 +152,12 @@ function test( createSelector, WeakMapImpl ) {
 			todos: {
 				'2018-01-01': [
 					{ text: 'Go to the gym', complete: true },
-					{ text: 'Try to spend time in the sunlight', complete: true }
+					{ text: 'Try to spend time in the sunlight', complete: true },
 				],
 				'2018-01-02': [
-					{ text: 'Laundry must be done', complete: false }
-				]
-			}
+					{ text: 'Laundry must be done', complete: false },
+				],
+			},
 		};
 
 		const selectorByDate = sandbox.spy( ( state, date, isComplete = false ) => (
@@ -197,8 +197,8 @@ describe( 'createSelector', () => {
 	const _WeakMap = WeakMap;
 
 	const WEAKMAP_SUPPORT = {
-		'with': _WeakMap,
-		without: undefined
+		with: _WeakMap,
+		without: undefined,
 	};
 
 	for ( const name in WEAKMAP_SUPPORT ) {

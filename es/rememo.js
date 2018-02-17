@@ -12,15 +12,16 @@ LEAF_KEY = {};
 /**
  * Whether environment supports WeakMap.
  *
- * @type {Boolean}
+ * @type {boolean}
  */
 hasWeakMap = typeof WeakMap !== 'undefined';
 
 /**
  * Returns the first argument.
  *
- * @param  {*} value Value to return
- * @return {*}       Value returned
+ * @param  {*} value Value to return.
+ *
+ * @return {*}       Value returned.
  */
 function identity( value ) {
 	return value;
@@ -30,8 +31,9 @@ function identity( value ) {
  * Returns true if the value passed is object-like, or false otherwise. A value
  * is object-like if it can support property assignment, e.g. object or array.
  *
- * @param  {*}       value Value to test
- * @return {Boolean}       Whether value is object-like
+ * @param  {*}       value Value to test.
+ *
+ * @return {boolean}       Whether value is object-like.
  */
 function isObjectLike( value ) {
 	return !! value && 'object' === typeof value;
@@ -46,7 +48,7 @@ function createCache() {
 	var cache = {
 		clear: function() {
 			cache.head = null;
-		}
+		},
 	};
 
 	return cache;
@@ -58,9 +60,9 @@ function createCache() {
  *
  * @param {Array}  a         First array.
  * @param {Array}  b         Second array.
- * @param {Number} fromIndex Index from which to start comparison.
+ * @param {number} fromIndex Index from which to start comparison.
  *
- * @return {Boolean} Whether arrays are shallowly equal.
+ * @return {boolean} Whether arrays are shallowly equal.
  */
 function isShallowEqual( a, b, fromIndex ) {
 	var i;
@@ -86,11 +88,12 @@ function isShallowEqual( a, b, fromIndex ) {
  * dependant references remain the same. If getDependants returns a different
  * reference(s), the cache is cleared and the selector value regenerated.
  *
- * @param  {Function} selector      Selector function
+ * @param  {Function} selector      Selector function.
  * @param  {Function} getDependants Dependant getter returning an immutable
  *                                  reference or array of reference used in
- *                                  cache bust consideration
- * @return {Function}               Memoized selector
+ *                                  cache bust consideration.
+ *
+ * @return {Function} Memoized selector.
  */
 export default function( selector, getDependants ) {
 	var rootCache, getCache;
@@ -105,7 +108,7 @@ export default function( selector, getDependants ) {
 	 * root WeakMap cache set, otherwise it is a shared instance of the default
 	 * cache object.
 	 *
-	 * @return {(WeakMap|Object)} Root cache object
+	 * @return {(WeakMap|Object)} Root cache object.
 	 */
 	function getRootCache() {
 		return rootCache;
@@ -125,9 +128,9 @@ export default function( selector, getDependants ) {
 	 *
 	 * @see isObjectLike
 	 *
-	 * @param {Array} dependants Selector dependants
+	 * @param {Array} dependants Selector dependants.
 	 *
-	 * @return {Object} Cache object
+	 * @return {Object} Cache object.
 	 */
 	function getWeakMapCache( dependants ) {
 		var caches = rootCache,
@@ -176,13 +179,15 @@ export default function( selector, getDependants ) {
 		rootCache = hasWeakMap ? new WeakMap() : createCache();
 	}
 
+	// eslint-disable-next-line jsdoc/check-param-names
 	/**
 	 * The augmented selector call, considering first whether dependants have
 	 * changed before passing it to underlying memoize function.
 	 *
-	 * @param  {Object} source    Source object for derivation
-	 * @param  {...*}   extraArgs Additional arguments to pass to selector
-	 * @return {*}                Selector result
+	 * @param  {Object} source    Source object for derivation.
+	 * @param  {...*}   extraArgs Additional arguments to pass to selector.
+	 *
+	 * @return {*} Selector result.
 	 */
 	function callSelector( /* source, ...extraArgs */ ) {
 		var len = arguments.length,
@@ -245,7 +250,7 @@ export default function( selector, getDependants ) {
 
 		node = {
 			// Generate the result from original function
-			val: selector.apply( null, args )
+			val: selector.apply( null, args ),
 		};
 
 		// Avoid including the source object in the cache.

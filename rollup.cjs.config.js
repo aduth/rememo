@@ -3,6 +3,6 @@ export default {
 	dest: 'rememo.js',
 	format: 'cjs',
 	external: [
-		'shallow-equal/arrays'
-	]
+		'shallow-equal/arrays',
+	],
 };

@@ -17,21 +17,21 @@ LEAF_KEY = {};
 hasWeakMap = typeof WeakMap !== 'undefined';
 
 /**
- * Returns the first argument.
+ * Returns the first argument as the sole entry in an array.
  *
- * @param  {*} value Value to return.
+ * @param {*} value Value to return.
  *
- * @return {*} Value returned.
+ * @return {Array} Value returned as entry in array.
  */
-function identity( value ) {
-	return value;
+function arrayOf( value ) {
+	return [ value ];
 }
 
 /**
  * Returns true if the value passed is object-like, or false otherwise. A value
  * is object-like if it can support property assignment, e.g. object or array.
  *
- * @param  {*} value Value to test.
+ * @param {*} value Value to test.
  *
  * @return {boolean} Whether value is object-like.
  */
@@ -88,10 +88,10 @@ function isShallowEqual( a, b, fromIndex ) {
  * dependant references remain the same. If getDependants returns a different
  * reference(s), the cache is cleared and the selector value regenerated.
  *
- * @param  {Function} selector      Selector function.
- * @param  {Function} getDependants Dependant getter returning an immutable
- *                                  reference or array of reference used in
- *                                  cache bust consideration.
+ * @param {Function} selector      Selector function.
+ * @param {Function} getDependants Dependant getter returning an immutable
+ *                                 reference or array of reference used in
+ *                                 cache bust consideration.
  *
  * @return {Function} Memoized selector.
  */
@@ -100,7 +100,7 @@ export default function( selector, getDependants ) {
 
 	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {
-		getDependants = identity;
+		getDependants = arrayOf;
 	}
 
 	/**
@@ -184,8 +184,8 @@ export default function( selector, getDependants ) {
 	 * The augmented selector call, considering first whether dependants have
 	 * changed before passing it to underlying memoize function.
 	 *
-	 * @param  {Object} source    Source object for derivation.
-	 * @param  {...*}   extraArgs Additional arguments to pass to selector.
+	 * @param {Object} source    Source object for derivation.
+	 * @param {...*}   extraArgs Additional arguments to pass to selector.
 	 *
 	 * @return {*} Selector result.
 	 */
@@ -199,12 +199,7 @@ export default function( selector, getDependants ) {
 			args[ i ] = arguments[ i ];
 		}
 
-		// Retrieve and normalize dependants as array
 		dependants = getDependants.apply( null, args );
-		if ( ! Array.isArray( dependants ) ) {
-			dependants = [ dependants ];
-		}
-
 		cache = getCache( dependants );
 
 		// If not guaranteed uniqueness by dependants (primitive type or lack
@@ -271,6 +266,7 @@ export default function( selector, getDependants ) {
 		return node.val;
 	}
 
+	callSelector.getDependants = getDependants;
 	callSelector.clear = clear;
 	clear();
 

@@ -19,6 +19,10 @@ function test( createSelector, WeakMapImpl ) {
 		)
 	);
 
+	const getDependants = sandbox.spy(
+		( state ) => [ state.todo ]
+	);
+
 	const getState = () => ( {
 		todo: [
 			{ text: 'Go to the gym', complete: true },
@@ -29,7 +33,7 @@ function test( createSelector, WeakMapImpl ) {
 
 	beforeEach( () => {
 		sandbox.reset();
-		getTasksByCompletion = createSelector( selector, ( state ) => state.todo );
+		getTasksByCompletion = createSelector( selector, getDependants );
 	} );
 
 	it( 'exposes cache clearing method', () => {
@@ -112,7 +116,7 @@ function test( createSelector, WeakMapImpl ) {
 	} );
 
 	it( 'clears cache when primitive dependant changes', () => {
-		const getTasksByCompletionOnCount = createSelector( selector, ( state ) => state.ok );
+		const getTasksByCompletionOnCount = createSelector( selector, ( state ) => [ state.ok ] );
 		const state = getState();
 		state.ok = false;
 		let completed = getTasksByCompletionOnCount( state, true );
@@ -190,6 +194,18 @@ function test( createSelector, WeakMapImpl ) {
 
 		sinon.assert.calledTwice( selector );
 		assert.deepEqual( completed, selector( state ) );
+	} );
+
+	it( 'exposes dependants getter', () => {
+		const todo = [];
+		const state = { todo };
+
+		const dependants = getTasksByCompletion.getDependants( state, true );
+
+		assert.ok( Array.isArray( dependants ) );
+		assert.equal( dependants.length, 1 );
+		assert.equal( dependants[ 0 ], todo );
+		sinon.assert.calledWith( getDependants, state, true );
 	} );
 }
 

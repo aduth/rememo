@@ -1,4 +1,4 @@
-#### v2.4.1 (TBD)
+#### v2.4.1 (2018-02-17)
 
 - Improved: Minor size and performance optimization on cache arguments handling.
 

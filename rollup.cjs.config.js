@@ -4,7 +4,4 @@ export default {
 		file: 'rememo.js',
 		format: 'cjs',
 	},
-	external: [
-		'shallow-equal/arrays',
-	],
 };

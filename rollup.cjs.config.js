@@ -1,7 +1,9 @@
 export default {
-	entry: 'es/rememo.js',
-	dest: 'rememo.js',
-	format: 'cjs',
+	input: 'es/rememo.js',
+	output: {
+		file: 'rememo.js',
+		format: 'cjs',
+	},
 	external: [
 		'shallow-equal/arrays',
 	],

@@ -3,7 +3,7 @@ const sinon = require( 'sinon' );
 
 function test( createSelector, WeakMapImpl ) {
 	let getTasksByCompletion;
-	const sandbox = sinon.sandbox.create();
+	const sandbox = sinon.createSandbox();
 
 	function ifWeakMapIt( ...args ) {
 		if ( typeof WeakMapImpl !== 'undefined' ) {

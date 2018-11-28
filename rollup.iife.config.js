@@ -2,10 +2,12 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 
 export default {
-	entry: 'es/rememo.js',
-	dest: 'dist/rememo.js',
-	moduleName: 'rememo',
-	format: 'iife',
+	input: 'es/rememo.js',
+	output: {
+		file: 'dist/rememo.js',
+		name: 'rememo',
+		format: 'iife',
+	},
 	plugins: [
 		resolve(),
 		commonjs(),

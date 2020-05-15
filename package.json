@@ -43,15 +43,14 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@aduth/eslint-config": "^3.0.0",
-    "eslint": "^5.9.0",
-    "eslint-plugin-jsdoc": "^3.9.1",
-    "mocha": "^5.2.0",
+    "@wordpress/eslint-plugin": "^7.1.0",
+    "eslint": "^7.8.1",
+    "mocha": "^8.1.3",
     "npm-run-all": "^4.1.5",
-    "rollup": "^0.67.3",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^3.4.0",
-    "sinon": "^7.1.1",
-    "uglify-js": "^3.4.9"
+    "rollup": "^2.26.11",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "sinon": "^9.0.3",
+    "uglify-js": "^3.10.4"
   }
 }

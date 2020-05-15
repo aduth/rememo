@@ -1,6 +1,6 @@
 {
 	"root": true,
-	"extends": "@aduth/eslint-config",
+	"extends": "plugin:@wordpress/eslint-plugin/recommended-with-formatting",
 	"parserOptions": {
 		"ecmaVersion": 6,
 		"sourceType": "module"

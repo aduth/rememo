@@ -3,9 +3,23 @@
 var LEAF_KEY, hasWeakMap;
 
 /**
+ * @typedef Cache
+ *
+ * @property {()=>void} clear                Function to clear cache.
+ * @property {boolean}  isUniqueByDependants Whether dependants are valid in
+ *                                           considering cache uniqueness. A
+ *                                           cache can be unique if all
+ *                                           dependents are arrays or objects.
+ */
+
+/**
+ * @typedef {WeakMap<WeakMapCache|Cache>} WeakMapCache
+ */
+
+/**
  * Arbitrary value used as key for referencing cache object in WeakMap tree.
  *
- * @type {Object}
+ * @type {{}}
  */
 LEAF_KEY = {};
 
@@ -42,7 +56,7 @@ function isObjectLike( value ) {
 /**
  * Creates and returns a new cache object.
  *
- * @return {Object} Cache object.
+ * @return {Cache} Cache object.
  */
 function createCache() {
 	var cache = {
@@ -108,7 +122,7 @@ export default function( selector, getDependants ) {
 	 * root WeakMap cache set, otherwise it is a shared instance of the default
 	 * cache object.
 	 *
-	 * @return {(WeakMap|Object)} Root cache object.
+	 * @return {(WeakMapCache|Cache)} Root cache object.
 	 */
 	function getRootCache() {
 		return rootCache;
@@ -128,9 +142,9 @@ export default function( selector, getDependants ) {
 	 *
 	 * @see isObjectLike
 	 *
-	 * @param {Array} dependants Selector dependants.
+	 * @param {*[]} dependants Selector dependants.
 	 *
-	 * @return {Object} Cache object.
+	 * @return {Cache} Cache object.
 	 */
 	function getWeakMapCache( dependants ) {
 		var caches = rootCache,
@@ -179,16 +193,17 @@ export default function( selector, getDependants ) {
 		rootCache = hasWeakMap ? new WeakMap() : createCache();
 	}
 
-	// eslint-disable-next-line jsdoc/check-param-names
+	/* eslint-disable jsdoc/check-param-names */
 	/**
 	 * The augmented selector call, considering first whether dependants have
 	 * changed before passing it to underlying memoize function.
 	 *
-	 * @param {Object} source    Source object for derivation.
-	 * @param {...*}   extraArgs Additional arguments to pass to selector.
+	 * @param {*}    source    Source object for derivation.
+	 * @param {...*} extraArgs Additional arguments to pass to selector.
 	 *
 	 * @return {*} Selector result.
 	 */
+	/* eslint-enable jsdoc/check-param-names */
 	function callSelector( /* source, ...extraArgs */ ) {
 		var len = arguments.length,
 			cache, node, i, args, dependants;

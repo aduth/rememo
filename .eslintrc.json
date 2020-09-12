@@ -9,7 +9,8 @@
 		"jsdoc": {
 			"preferredTypes": {
 				"object": "object"
-			}
+			},
+			"mode": "typescript"
 		}
 	},
 	"env": {
@@ -17,5 +18,8 @@
 	},
 	"globals": {
 		"WeakMap": true
+	},
+	"rules": {
+		"one-var": "off"
 	}
 }

@@ -1,19 +1,25 @@
 'use strict';
 
-var LEAF_KEY, hasWeakMap;
+/**
+ * Internal cache entry.
+ *
+ * @typedef CacheNode
+ *
+ * @property {?CacheNode|undefined} [prev] Previous node.
+ * @property {?CacheNode|undefined} [next] Next node.
+ * @property {Array<*>}             args   Function arguments for cache entry.
+ * @property {*}                    val    Function result.
+ */
 
 /**
  * @typedef Cache
  *
- * @property {()=>void} clear                Function to clear cache.
- * @property {boolean}  isUniqueByDependants Whether dependants are valid in
- *                                           considering cache uniqueness. A
- *                                           cache can be unique if all
- *                                           dependents are arrays or objects.
- */
-
-/**
- * @typedef {WeakMap<WeakMapCache|Cache>} WeakMapCache
+ * @property {()=>void}   clear                  Function to clear cache.
+ * @property {boolean}    [isUniqueByDependants] Whether dependants are valid in
+ *                                               considering cache uniqueness. A
+ *                                               cache is unique if dependents
+ *                                               are all arrays or objects.
+ * @property {CacheNode?} [head]                 Cache head.
  */
 
 /**
@@ -21,21 +27,23 @@ var LEAF_KEY, hasWeakMap;
  *
  * @type {{}}
  */
-LEAF_KEY = {};
+var LEAF_KEY = {};
 
 /**
  * Whether environment supports WeakMap.
  *
  * @type {boolean}
  */
-hasWeakMap = typeof WeakMap !== 'undefined';
+var hasWeakMap = typeof WeakMap !== 'undefined';
 
 /**
  * Returns the first argument as the sole entry in an array.
  *
- * @param {*} value Value to return.
+ * @template T
  *
- * @return {Array} Value returned as entry in array.
+ * @param {T} value Value to return.
+ *
+ * @return {[T]} Value returned as entry in array.
  */
 function arrayOf( value ) {
 	return [ value ];
@@ -59,6 +67,7 @@ function isObjectLike( value ) {
  * @return {Cache} Cache object.
  */
 function createCache() {
+	/** @type {Cache} */
 	var cache = {
 		clear: function() {
 			cache.head = null;
@@ -72,8 +81,8 @@ function createCache() {
  * Returns true if entries within the two arrays are strictly equal by
  * reference from a starting index.
  *
- * @param {Array}  a         First array.
- * @param {Array}  b         Second array.
+ * @param {*[]}    a         First array.
+ * @param {*[]}    b         Second array.
  * @param {number} fromIndex Index from which to start comparison.
  *
  * @return {boolean} Whether arrays are shallowly equal.
@@ -110,7 +119,12 @@ function isShallowEqual( a, b, fromIndex ) {
  * @return {Function} Memoized selector.
  */
 export default function( selector, getDependants ) {
-	var rootCache, getCache;
+	/** @type {Cache} */
+	var rootCache;
+
+	// Assign cache handler by availability of WeakMap
+	/** @type {(dependents:*[])=>Cache} */
+	var getCache = hasWeakMap ? getWeakMapCache : getRootCache;
 
 	// Use object source as dependant if getter not provided
 	if ( ! getDependants ) {
@@ -122,7 +136,7 @@ export default function( selector, getDependants ) {
 	 * root WeakMap cache set, otherwise it is a shared instance of the default
 	 * cache object.
 	 *
-	 * @return {(WeakMapCache|Cache)} Root cache object.
+	 * @return {(WeakMap<*,*>|Cache)} Root cache object.
 	 */
 	function getRootCache() {
 		return rootCache;
@@ -182,9 +196,6 @@ export default function( selector, getDependants ) {
 
 		return caches.get( LEAF_KEY );
 	}
-
-	// Assign cache handler by availability of WeakMap
-	getCache = hasWeakMap ? getWeakMapCache : getRootCache;
 
 	/**
 	 * Resets root memoization cache.

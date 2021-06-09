@@ -15,10 +15,10 @@
     "test:unit": "mocha",
     "test": "npm-run-all --parallel test:*",
     "build:iife": "rollup -c rollup.iife.config.js",
-    "postbuild:iife": "npm run uglify",
+    "postbuild:iife": "npm run minify",
     "build:cjs": "rollup -c rollup.cjs.config.js",
     "build": "npm-run-all --parallel build:*",
-    "uglify": "uglifyjs dist/rememo.js -c -m > dist/rememo.min.js",
+    "minify": "terser dist/rememo.js -c -m > dist/rememo.min.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -43,14 +43,14 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^19.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
     "@wordpress/eslint-plugin": "^7.1.0",
     "eslint": "^7.8.1",
     "mocha": "^8.1.3",
     "npm-run-all": "^4.1.5",
-    "rollup": "^2.26.11",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup": "^2.51.1",
     "sinon": "^9.0.3",
-    "uglify-js": "^3.10.4"
+    "terser": "^5.7.0"
   }
 }

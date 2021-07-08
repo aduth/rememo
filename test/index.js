@@ -1,15 +1,10 @@
 const assert = require('assert');
 const sinon = require('sinon');
+const createSelector = require('../');
 
-function test(createSelector, WeakMapImpl) {
+describe('createSelector', () => {
 	let getTasksByCompletion;
 	const sandbox = sinon.createSandbox();
-
-	function ifWeakMapIt(...args) {
-		if (typeof WeakMapImpl !== 'undefined') {
-			return it(...args);
-		}
-	}
 
 	const selector = sandbox.spy((state, isComplete = false, extra) =>
 		state.todo
@@ -146,7 +141,7 @@ function test(createSelector, WeakMapImpl) {
 		assert.deepEqual(completed, selector(state, true));
 	});
 
-	ifWeakMapIt('deep caches on object dependants', () => {
+	it('deep caches on object dependants', () => {
 		const stateByDate = {
 			todos: {
 				'2018-01-01': [
@@ -200,35 +195,4 @@ function test(createSelector, WeakMapImpl) {
 		assert.equal(dependants[0], todo);
 		sinon.assert.calledWith(getDependants, state, true);
 	});
-}
-
-describe('createSelector', () => {
-	const _WeakMap = WeakMap;
-
-	const WEAKMAP_SUPPORT = {
-		with: _WeakMap,
-		without: undefined,
-	};
-
-	for (const name in WEAKMAP_SUPPORT) {
-		const WeakMapImpl = WEAKMAP_SUPPORT[name];
-
-		context(name + ' WeakMap', () => {
-			let implementation;
-			const createSelector = (...args) => implementation(...args);
-
-			before(() => {
-				global.WeakMap = WeakMapImpl;
-
-				delete require.cache[require.resolve('../')];
-				implementation = require('../');
-			});
-
-			after(() => {
-				global.WeakMap = _WeakMap;
-			});
-
-			test(createSelector, WeakMapImpl);
-		});
-	}
 });

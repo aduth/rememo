@@ -1,6 +1,6 @@
 'use strict';
 
-var LEAF_KEY, hasWeakMap;
+var LEAF_KEY;
 
 /**
  * @typedef Cache
@@ -22,13 +22,6 @@ var LEAF_KEY, hasWeakMap;
  * @type {{}}
  */
 LEAF_KEY = {};
-
-/**
- * Whether environment supports WeakMap.
- *
- * @type {boolean}
- */
-hasWeakMap = typeof WeakMap !== 'undefined';
 
 /**
  * Returns the first argument as the sole entry in an array.
@@ -110,22 +103,11 @@ function isShallowEqual(a, b, fromIndex) {
  * @return {Function} Memoized selector.
  */
 export default function (selector, getDependants) {
-	var rootCache, getCache;
+	var rootCache;
 
 	// Use object source as dependant if getter not provided
 	if (!getDependants) {
 		getDependants = arrayOf;
-	}
-
-	/**
-	 * Returns the root cache. If WeakMap is supported, this is assigned to the
-	 * root WeakMap cache set, otherwise it is a shared instance of the default
-	 * cache object.
-	 *
-	 * @return {(WeakMapCache|Cache)} Root cache object.
-	 */
-	function getRootCache() {
-		return rootCache;
 	}
 
 	/**
@@ -146,7 +128,7 @@ export default function (selector, getDependants) {
 	 *
 	 * @return {Cache} Cache object.
 	 */
-	function getWeakMapCache(dependants) {
+	function getCache(dependants) {
 		var caches = rootCache,
 			isUniqueByDependants = true,
 			i,
@@ -186,14 +168,11 @@ export default function (selector, getDependants) {
 		return caches.get(LEAF_KEY);
 	}
 
-	// Assign cache handler by availability of WeakMap
-	getCache = hasWeakMap ? getWeakMapCache : getRootCache;
-
 	/**
 	 * Resets root memoization cache.
 	 */
 	function clear() {
-		rootCache = hasWeakMap ? new WeakMap() : createCache();
+		rootCache = new WeakMap();
 	}
 
 	/* eslint-disable jsdoc/check-param-names */
@@ -224,9 +203,9 @@ export default function (selector, getDependants) {
 		dependants = getDependants.apply(null, args);
 		cache = getCache(dependants);
 
-		// If not guaranteed uniqueness by dependants (primitive type or lack
-		// of WeakMap support), shallow compare against last dependants and, if
-		// references have changed, destroy cache to recalculate result.
+		// If not guaranteed uniqueness by dependants (primitive type), shallow
+		// compare against last dependants and, if references have changed,
+		// destroy cache to recalculate result.
 		if (!cache.isUniqueByDependants) {
 			if (
 				cache.lastDependants &&

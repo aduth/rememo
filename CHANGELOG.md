@@ -1,3 +1,7 @@
+#### v4.0.0 (Unreleased)
+
+- Breaking: Drop support for environments which don't have WeakMap. This should only affect Internet Explorer 10 and older.
+
 #### v3.0.0 (2018-02-17)
 
 - Breaking: `getDependants` (the second argument) must return an array. Per the below added feature, this has been done in an effort to to reduce developer burden in normalizing dependants reuse as arrays.

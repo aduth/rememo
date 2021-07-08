@@ -1,19 +1,36 @@
 'use strict';
 
-var LEAF_KEY;
+/** @typedef {(...args: any[]) => *[]} GetDependants */
+
+/** @typedef {() => void} Clear */
+
+/**
+ * @typedef {{
+ *   getDependants: GetDependants,
+ *   clear: Clear
+ * }} EnhancedSelector
+ */
+
+/**
+ * Internal cache entry.
+ *
+ * @typedef CacheNode
+ *
+ * @property {?CacheNode|undefined} [prev] Previous node.
+ * @property {?CacheNode|undefined} [next] Next node.
+ * @property {*[]} args Function arguments for cache entry.
+ * @property {*} val Function result.
+ */
 
 /**
  * @typedef Cache
  *
- * @property {()=>void} clear                Function to clear cache.
- * @property {boolean}  isUniqueByDependants Whether dependants are valid in
- *                                           considering cache uniqueness. A
- *                                           cache can be unique if all
- *                                           dependents are arrays or objects.
- */
-
-/**
- * @typedef {WeakMap<WeakMapCache|Cache>} WeakMapCache
+ * @property {Clear} clear Function to clear cache.
+ * @property {boolean} [isUniqueByDependants] Whether dependants are valid in
+ * considering cache uniqueness. A cache is unique if dependents are all arrays
+ * or objects.
+ * @property {CacheNode?} [head] Cache head.
+ * @property {*[]} [lastDependants] Dependants from previous invocation.
  */
 
 /**
@@ -21,14 +38,16 @@ var LEAF_KEY;
  *
  * @type {{}}
  */
-LEAF_KEY = {};
+var LEAF_KEY = {};
 
 /**
  * Returns the first argument as the sole entry in an array.
  *
- * @param {*} value Value to return.
+ * @template T
  *
- * @return {Array} Value returned as entry in array.
+ * @param {T} value Value to return.
+ *
+ * @return {[T]} Value returned as entry in array.
  */
 function arrayOf(value) {
 	return [value];
@@ -52,6 +71,7 @@ function isObjectLike(value) {
  * @return {Cache} Cache object.
  */
 function createCache() {
+	/** @type {Cache} */
 	var cache = {
 		clear: function () {
 			cache.head = null;
@@ -65,8 +85,8 @@ function createCache() {
  * Returns true if entries within the two arrays are strictly equal by
  * reference from a starting index.
  *
- * @param {Array}  a         First array.
- * @param {Array}  b         Second array.
+ * @param {*[]} a First array.
+ * @param {*[]} b Second array.
  * @param {number} fromIndex Index from which to start comparison.
  *
  * @return {boolean} Whether arrays are shallowly equal.
@@ -95,20 +115,18 @@ function isShallowEqual(a, b, fromIndex) {
  * dependant references remain the same. If getDependants returns a different
  * reference(s), the cache is cleared and the selector value regenerated.
  *
- * @param {Function} selector      Selector function.
- * @param {Function} getDependants Dependant getter returning an immutable
- *                                 reference or array of reference used in
- *                                 cache bust consideration.
+ * @template {(...args: *[]) => *} S
  *
- * @return {Function} Memoized selector.
+ * @param {S} selector Selector function.
+ * @param {GetDependants=} getDependants Dependant getter returning an array of
+ * references used in cache bust consideration.
  */
 export default function (selector, getDependants) {
+	/** @type {WeakMap<*,*>} */
 	var rootCache;
 
-	// Use object source as dependant if getter not provided
-	if (!getDependants) {
-		getDependants = arrayOf;
-	}
+	/** @type {GetDependants} */
+	var normalizedGetDependants = getDependants ? getDependants : arrayOf;
 
 	/**
 	 * Returns the cache for a given dependants array. When possible, a WeakMap
@@ -200,7 +218,7 @@ export default function (selector, getDependants) {
 			args[i] = arguments[i];
 		}
 
-		dependants = getDependants.apply(null, args);
+		dependants = normalizedGetDependants.apply(null, args);
 		cache = getCache(dependants);
 
 		// If not guaranteed uniqueness by dependants (primitive type), shallow
@@ -230,14 +248,14 @@ export default function (selector, getDependants) {
 			// Surface matched node to head if not already
 			if (node !== cache.head) {
 				// Adjust siblings to point to each other.
-				node.prev.next = node.next;
+				/** @type {CacheNode} */ (node.prev).next = node.next;
 				if (node.next) {
 					node.next.prev = node.prev;
 				}
 
 				node.next = cache.head;
 				node.prev = null;
-				cache.head.prev = node;
+				/** @type {CacheNode} */ (cache.head).prev = node;
 				cache.head = node;
 			}
 
@@ -247,10 +265,10 @@ export default function (selector, getDependants) {
 
 		// No cached value found. Continue to insertion phase:
 
-		node = {
+		node = /** @type {CacheNode} */ ({
 			// Generate the result from original function
 			val: selector.apply(null, args),
-		};
+		});
 
 		// Avoid including the source object in the cache.
 		args[0] = null;
@@ -270,9 +288,9 @@ export default function (selector, getDependants) {
 		return node.val;
 	}
 
-	callSelector.getDependants = getDependants;
+	callSelector.getDependants = normalizedGetDependants;
 	callSelector.clear = clear;
 	clear();
 
-	return callSelector;
+	return /** @type {S & EnhancedSelector} */ (callSelector);
 }

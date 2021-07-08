@@ -1,6 +1,7 @@
 #### v4.0.0 (Unreleased)
 
 - Breaking: Drop support for environments which don't have WeakMap. This should only affect Internet Explorer 10 and older.
+- New: TypeScript type definitions are now included.
 
 #### v3.0.0 (2018-02-17)
 
@@ -61,13 +62,13 @@
 #### v1.1.1 (2017-06-13)
 
 - Fix: Resolve an error in environments not supporting Promise, caused by
-defaults behavior in the underlying memoization library.
+  defaults behavior in the underlying memoization library.
 
 #### v1.1.0 (2017-06-08)
 
 - Improved: Object target is ignored in generating memoized function cache key.
-This can resolve issues where cache would be discarded if dependant references
-were the same but the target object reference changed.
+  This can resolve issues where cache would be discarded if dependant references
+  were the same but the target object reference changed.
 
 #### v1.0.2 (2017-05-29)
 

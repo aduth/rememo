@@ -4,6 +4,7 @@ node_modules
 # Generated
 dist
 /rememo.js
+/rememo.d.ts
 
 # System
 .DS_Store

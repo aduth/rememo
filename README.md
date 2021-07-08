@@ -11,19 +11,18 @@ import createSelector from 'rememo';
 
 const getTasksByCompletion = createSelector(
 	// The expensive computation:
-	( state, isComplete ) => state.todo.filter(
-		( task ) => task.complete === isComplete
-	),
+	(state, isComplete) =>
+		state.todo.filter((task) => task.complete === isComplete),
 
 	// The reference(s) upon which the computation depends:
-	( state ) => [ state.todo ]
+	(state) => [state.todo]
 );
 
 // The selector will only calculate the return value once so long as the state
 // `todo` reference remains the same
 let completedTasks;
-completedTasks = getTasksByCompletion( state, true ); // Computed
-completedTasks = getTasksByCompletion( state, true ); // Returned from cache
+completedTasks = getTasksByCompletion(state, true); // Computed
+completedTasks = getTasksByCompletion(state, true); // Returned from cache
 ```
 
 ## Installation
@@ -39,9 +38,9 @@ Browser-ready versions are available from [unpkg](https://unpkg.com/rememo/dist/
 ```html
 <script src="https://unpkg.com/rememo/dist/rememo.min.js"></script>
 <script>
-var createSelector = window.rememo;
+	var createSelector = window.rememo;
 
-// ...
+	// ...
 </script>
 ```
 
@@ -49,17 +48,17 @@ var createSelector = window.rememo;
 
 Rememo's default export is a function:
 
-```js
+```typescript
 createSelector(
-	selector: Function, 
-	getDependants: Function
-): Function
+	selector: (...args: any[]) => any,
+	getDependants?: (...args: any[]) => any[],
+): (...args: any[]) => any
 ```
 
 The returned function is a memoized selector with the following signature:
 
-```js
-memoizedSelector( source: Object, ...args: mixed ): mixed
+```typescript
+memoizedSelector(source: object, ...args: any[]): any
 ```
 
 It's expected that the first argument to the memoized function is the source from which the selector operates. It is ignored when considering whether the argument result has already been cached.
@@ -67,25 +66,24 @@ It's expected that the first argument to the memoized function is the source fro
 The memoized selector function includes two additional properties:
 
 - `clear()`: When invoked, resets memoization cache.
-- `getDependants( source: Object, ...args: mixed )`: The dependants getter for the selector.
+- `getDependants(source: Object, ...args: any[])`: The dependants getter for the selector.
 
 The `getDependants` property can be useful when creating selectors which compose other memoized selectors, in which case the dependants are the union of the two selectors' dependants:
 
 ```js
 const getTasksByCompletion = createSelector(
-	( state, isComplete ) => state.todo.filter(
-		( task ) => task.complete === isComplete
-	),
-	( state ) => [ state.todo ]
+	(state, isComplete) =>
+		state.todo.filter((task) => task.complete === isComplete),
+	(state) => [state.todo]
 );
 
 const getTasksByCompletionForCurrentDate = createSelector(
-	( state, isComplete ) => (
-		getTasksByCompletion( state, isComplete )
-			.filter( ( task ) => task.date === state.currentDate )
-	),
-	( state, isComplete ) => [
-		...getTasksByCompletion.getDependants( state, isComplete ),
+	(state, isComplete) =>
+		getTasksByCompletion(state, isComplete).filter(
+			(task) => task.date === state.currentDate
+		),
+	(state, isComplete) => [
+		...getTasksByCompletion.getDependants(state, isComplete),
 		state.currentDate,
 	]
 );
@@ -102,16 +100,16 @@ const state = {
 	todo: [
 		{ text: 'Go to the gym', complete: true },
 		{ text: 'Try to spend time in the sunlight', complete: false },
-		{ text: 'Laundry must be done', complete: true }
-	]
+		{ text: 'Laundry must be done', complete: true },
+	],
 };
 ```
 
 If we wanted to filter tasks by completion, we could write a simple function:
 
 ```js
-function getTasksByCompletion( state, isComplete ) {
-	return state.todo.filter( ( task ) => task.complete === isComplete );
+function getTasksByCompletion(state, isComplete) {
+	return state.todo.filter((task) => task.complete === isComplete);
 }
 ```
 
@@ -125,10 +123,9 @@ In our above example, we know the value of the function will only change if the 
 
 ```js
 const getTasksByCompletion = createSelector(
-	( state, isComplete ) => state.todo.filter(
-		( task ) => task.complete === isComplete
-	),
-	( state ) => [ state.todo ]
+	(state, isComplete) =>
+		state.todo.filter((task) => task.complete === isComplete),
+	(state) => [state.todo]
 );
 ```
 
@@ -139,12 +136,12 @@ Now we can call `getTasksByCompletion` as many times as we want without needless
 To simplify testing of memoized selectors, the function returned by `createSelector` includes a `clear` function:
 
 ```js
-const getTasksByCompletion = require( '../selector' );
+const getTasksByCompletion = require('../selector');
 
 // Test licecycle management varies by runner. This example uses Mocha.
-beforeEach( () => {
+beforeEach(() => {
 	getTasksByCompletion.clear();
-} );
+});
 ```
 
 Alternatively, you can create separate references (exports) for your memoized and unmemoized selectors, then test only the unmemoized selector.
@@ -153,7 +150,7 @@ Refer to [Rememo's own tests](https://github.com/aduth/rememo/tree/master/test/r
 
 ## FAQ
 
-__How does this differ from [Reselect](https://github.com/reactjs/reselect), another selector memoization library?__
+**How does this differ from [Reselect](https://github.com/reactjs/reselect), another selector memoization library?**
 
 Reselect and Rememo largely share the same goals, but have slightly different implementation semantics. Reselect optimizes for function composition, requiring that you pass as arguments functions returning derived data of increasing specificity. Constrasting it to our to-do example above, with Reselect we would pass two arguments: a function which retrieves `todo` from the state object, and a second function which receives that set as an argument and performs the completeness filter. The distinction is not as obvious with a simple example like this one, and can be seen more clearly with examples in [Reselect's README](https://github.com/reactjs/reselect#readme).
 

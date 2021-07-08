@@ -1,6 +1,6 @@
-const assert = require('assert');
-const sinon = require('sinon');
-const createSelector = require('../');
+import assert from 'assert';
+import sinon from 'sinon';
+import createSelector from '../es/rememo.js';
 
 describe('createSelector', () => {
 	let getTasksByCompletion;

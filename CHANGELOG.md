@@ -2,6 +2,7 @@
 
 - Breaking: Drop support for environments which don't have WeakMap. This should only affect Internet Explorer 10 and older.
 - New: TypeScript type definitions are now included.
+- Miscellaneous: The package is now implemented as a native ES module.
 
 #### v3.0.0 (2018-02-17)
 

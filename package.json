@@ -20,7 +20,6 @@
 	"scripts": {
 		"test:lint": "eslint .",
 		"test:typecheck": "tsc",
-		"pretest:unit": "npm run build:bundle",
 		"test:unit": "mocha",
 		"test": "npm-run-all --parallel test:*",
 		"build:bundle": "rollup -c",

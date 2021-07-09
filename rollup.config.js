@@ -1,5 +1,4 @@
-import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
+import { terser } from 'rollup-plugin-terser';
 
 export default /** @type {import('rollup').RollupOptions[]} */ [
 	{
@@ -18,6 +17,15 @@ export default /** @type {import('rollup').RollupOptions[]} */ [
 			exports: 'default',
 			format: 'iife',
 		},
-		plugins: [resolve(), commonjs()],
+	},
+	{
+		input: 'es/rememo.js',
+		output: {
+			file: 'dist/rememo.min.js',
+			name: 'rememo',
+			exports: 'default',
+			format: 'iife',
+		},
+		plugins: [terser()],
 	},
 ];

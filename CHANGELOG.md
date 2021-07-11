@@ -1,4 +1,4 @@
-#### v4.0.0 (Unreleased)
+#### v4.0.0 (2021-07-11)
 
 - Breaking: Drop support for environments which don't have WeakMap. This should only affect Internet Explorer 10 and older.
 - New: TypeScript type definitions are now included.

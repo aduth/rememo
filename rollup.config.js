@@ -2,15 +2,15 @@ import { terser } from 'rollup-plugin-terser';
 
 export default /** @type {import('rollup').RollupOptions[]} */ [
 	{
-		input: 'es/rememo.js',
+		input: 'rememo.js',
 		output: {
-			file: 'rememo.js',
+			file: 'rememo.cjs',
 			format: 'cjs',
 			exports: 'default',
 		},
 	},
 	{
-		input: 'es/rememo.js',
+		input: 'rememo.js',
 		output: {
 			file: 'dist/rememo.js',
 			name: 'rememo',
@@ -19,7 +19,7 @@ export default /** @type {import('rollup').RollupOptions[]} */ [
 		},
 	},
 	{
-		input: 'es/rememo.js',
+		input: 'rememo.js',
 		output: {
 			file: 'dist/rememo.min.js',
 			name: 'rememo',

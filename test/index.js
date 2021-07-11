@@ -1,6 +1,6 @@
 import assert from 'assert';
 import sinon from 'sinon';
-import createSelector from '../es/rememo.js';
+import createSelector from '../rememo.js';
 
 describe('createSelector', () => {
 	let getTasksByCompletion;

@@ -8,5 +8,5 @@
 		"noEmit": true,
 		"strict": true
 	},
-	"files": ["es/rememo.js"]
+	"files": ["rememo.js"]
 }

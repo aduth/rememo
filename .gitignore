@@ -3,7 +3,7 @@ node_modules
 
 # Generated
 dist
-/rememo.js
+/rememo.cjs
 /rememo.d.ts
 
 # System

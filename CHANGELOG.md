@@ -1,3 +1,7 @@
+#### v4.0.1 (2022-06-15)
+
+- Bug Fix: Fix error when importing in CommonJS projects.
+
 #### v4.0.0 (2021-07-11)
 
 - Breaking: Drop support for environments which don't have WeakMap. This should only affect Internet Explorer 10 and older.

@@ -1,7 +1,7 @@
 {
 	"name": "rememo",
 	"type": "module",
-	"version": "4.0.0",
+	"version": "4.0.1",
 	"description": "Memoized selectors for Redux and other immutable object derivation",
 	"main": "rememo.cjs",
 	"module": "rememo.js",

@@ -1,3 +1,7 @@
+#### v4.0.2 (2022-10-04)
+
+- TypeScript: Fix issue preventing TypeScript types from being resolved
+
 #### v4.0.1 (2022-06-15)
 
 - Bug Fix: Fix error when importing in CommonJS projects.

@@ -158,6 +158,6 @@ Rememo instead encourages you to consider the derivation first-and-foremost with
 
 ## License
 
-Copyright 2018-2021 Andrew Duthie
+Copyright 2018-2022 Andrew Duthie
 
 Released under the [MIT License](https://github.com/aduth/rememo/tree/master/LICENSE.md).

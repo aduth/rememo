@@ -51,15 +51,15 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@aduth/eslint-config": "^4.4.1",
-		"eslint": "^8.20.0",
+		"eslint": "^8.24.0",
 		"eslint-config-prettier": "^8.5.0",
-		"eslint-plugin-jsdoc": "^39.3.4",
+		"eslint-plugin-jsdoc": "^39.3.6",
 		"eslint-plugin-prettier": "^4.2.1",
 		"mocha": "^10.0.0",
 		"npm-run-all": "^4.1.5",
 		"prettier": "^2.7.1",
 		"rollup-plugin-terser": "^7.0.2",
-		"sinon": "^14.0.0",
-		"typescript": "^4.7.4"
+		"sinon": "^14.0.1",
+		"typescript": "^4.8.4"
 	}
 }

@@ -5,6 +5,7 @@
 	"description": "Memoized selectors for Redux and other immutable object derivation",
 	"main": "rememo.cjs",
 	"module": "rememo.js",
+	"types": "rememo.d.ts",
 	"exports": {
 		".": {
 			"import": "./rememo.js",

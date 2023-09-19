@@ -271,7 +271,7 @@ export default function (selector, getDependants) {
 		});
 
 		// Avoid including the source object in the cache.
-		args[0] = null;
+		if (args.length > 0) args[0] = null;
 		node.args = args;
 
 		// Don't need to check whether node is already head, since it would

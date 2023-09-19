@@ -60,6 +60,23 @@ describe('createSelector', () => {
 		assert.deepEqual(completed, selector(state, true, obj));
 	});
 
+	it('caches return value for empty args', () => {
+		let shouldCache = false;
+		const getValue = sandbox.spy(() => []);
+		const memoedGetValue = createSelector(getValue, () => [shouldCache]);
+
+		const initial = memoedGetValue();
+		sinon.assert.calledOnce(getValue);
+		const cached = memoedGetValue();
+		sinon.assert.calledOnce(getValue);
+		assert.strictEqual(initial, cached);
+
+		shouldCache = true;
+		const notCached = memoedGetValue();
+		sinon.assert.calledTwice(getValue);
+		assert.notStrictEqual(cached, notCached);
+	});
+
 	it('defaults to caching on entire state object', () => {
 		const getTasksByCompletionOnState = createSelector(selector);
 		let state = getState();

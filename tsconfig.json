@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"moduleResolution": "node",
+		"lib": ["DOM", "ES2015"],
 		"target": "ES5",
 		"allowJs": true,
 		"checkJs": true,

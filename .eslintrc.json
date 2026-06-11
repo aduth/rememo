@@ -19,11 +19,15 @@
 	},
 	"overrides": [
 		{
-			"files": "test/**/*",
-			"extends": "@aduth/eslint-config/esnext",
-			"env": {
-				"mocha": true
+			"files": "*.ts",
+			"rules": {
+				"prefer-rest-params": "off",
+				"vars-on-top": "off"
 			}
+		},
+		{
+			"files": "test/**/*",
+			"extends": "@aduth/eslint-config/esnext"
 		}
 	]
 }

@@ -1,18 +1,20 @@
-import assert from 'assert';
-import sinon from 'sinon';
-import createSelector from '../rememo.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import createSelectorDefault, { createSelector } from '../src/rememo';
 
 describe('createSelector', () => {
-	let getTasksByCompletion;
-	const sandbox = sinon.createSandbox();
+	it('is exposed as both the default and a named export', () => {
+		expect(createSelectorDefault).toBe(createSelector);
+	});
 
-	const selector = sandbox.spy((state, isComplete = false, extra) =>
+	let getTasksByCompletion;
+
+	const selector = vi.fn((state, isComplete = false, extra) =>
 		state.todo
 			.filter((task) => task.complete === isComplete)
 			.concat(extra || [])
 	);
 
-	const getDependants = sandbox.spy((state) => [state.todo]);
+	const getDependants = vi.fn((state) => [state.todo]);
 
 	const getState = () => ({
 		todo: [
@@ -23,19 +25,19 @@ describe('createSelector', () => {
 	});
 
 	beforeEach(() => {
-		sandbox.reset();
+		vi.clearAllMocks();
 		getTasksByCompletion = createSelector(selector, getDependants);
 	});
 
 	it('exposes cache clearing method', () => {
-		assert.equal(typeof getTasksByCompletion.clear, 'function');
+		expect(typeof getTasksByCompletion.clear).toBe('function');
 	});
 
 	it('returns the correct value', () => {
 		const state = getState();
 		const completed = getTasksByCompletion(state, true);
 
-		assert.deepEqual(completed, selector(state, true));
+		expect(completed).toEqual(selector(state, true));
 	});
 
 	it('caches return value', () => {
@@ -44,8 +46,8 @@ describe('createSelector', () => {
 		completed = getTasksByCompletion(state, true);
 		completed = getTasksByCompletion(state, true);
 
-		sinon.assert.calledOnce(selector);
-		assert.deepEqual(completed, selector(state, true));
+		expect(selector).toHaveBeenCalledTimes(1);
+		expect(completed).toEqual(selector(state, true));
 	});
 
 	it('caches return value for non-primitive args by reference', () => {
@@ -56,8 +58,8 @@ describe('createSelector', () => {
 		obj.mutated = true;
 		completed = getTasksByCompletion(state, true, obj);
 
-		sinon.assert.calledOnce(selector);
-		assert.deepEqual(completed, selector(state, true, obj));
+		expect(selector).toHaveBeenCalledTimes(1);
+		expect(completed).toEqual(selector(state, true, obj));
 	});
 
 	it('defaults to caching on entire state object', () => {
@@ -69,8 +71,8 @@ describe('createSelector', () => {
 		state = getState();
 		completed = getTasksByCompletionOnState(state, true);
 
-		sinon.assert.calledTwice(selector);
-		assert.deepEqual(completed, selector(state, true));
+		expect(selector).toHaveBeenCalledTimes(2);
+		expect(completed).toEqual(selector(state, true));
 	});
 
 	it('returns cached value on superfluous arguments', () => {
@@ -79,8 +81,8 @@ describe('createSelector', () => {
 		completed = getTasksByCompletion(state, true, true);
 		completed = getTasksByCompletion(state, true, true);
 
-		sinon.assert.calledOnce(selector);
-		assert.deepEqual(completed, selector(state, true, true));
+		expect(selector).toHaveBeenCalledTimes(1);
+		expect(completed).toEqual(selector(state, true, true));
 	});
 
 	it('returns the correct value of differing arguments', () => {
@@ -88,9 +90,9 @@ describe('createSelector', () => {
 		const completed = getTasksByCompletion(state, true);
 		const uncompleted = getTasksByCompletion(state, false);
 
-		sinon.assert.calledTwice(selector);
-		assert.deepEqual(completed, selector(state, true));
-		assert.deepEqual(uncompleted, selector(state, false));
+		expect(selector).toHaveBeenCalledTimes(2);
+		expect(completed).toEqual(selector(state, true));
+		expect(uncompleted).toEqual(selector(state, false));
 	});
 
 	it('clears cache when state reference changes', () => {
@@ -99,8 +101,8 @@ describe('createSelector', () => {
 		state = getState();
 		completed = getTasksByCompletion(state, true);
 
-		sinon.assert.calledTwice(selector);
-		assert.deepEqual(completed, selector(state, true));
+		expect(selector).toHaveBeenCalledTimes(2);
+		expect(completed).toEqual(selector(state, true));
 	});
 
 	it('clears cache when primitive dependant changes', () => {
@@ -113,8 +115,8 @@ describe('createSelector', () => {
 		state.ok = true;
 		completed = getTasksByCompletionOnCount(state, true);
 
-		sinon.assert.calledTwice(selector);
-		assert.deepEqual(completed, selector(state, true));
+		expect(selector).toHaveBeenCalledTimes(2);
+		expect(completed).toEqual(selector(state, true));
 	});
 
 	it('clears cache when non-primitive argument reference changes', () => {
@@ -126,8 +128,8 @@ describe('createSelector', () => {
 		obj = {};
 		completed = getTasksByCompletion(state, true, obj);
 
-		sinon.assert.calledTwice(selector);
-		assert.deepEqual(completed, selector(state, true, obj));
+		expect(selector).toHaveBeenCalledTimes(2);
+		expect(completed).toEqual(selector(state, true, obj));
 	});
 
 	it('returns cache even if target object has changed reference', () => {
@@ -137,8 +139,8 @@ describe('createSelector', () => {
 		state = Object.assign({}, state, { other: true });
 		completed = getTasksByCompletion(state, true);
 
-		sinon.assert.calledOnce(selector);
-		assert.deepEqual(completed, selector(state, true));
+		expect(selector).toHaveBeenCalledTimes(1);
+		expect(completed).toEqual(selector(state, true));
 	});
 
 	it('deep caches on object dependants', () => {
@@ -152,7 +154,7 @@ describe('createSelector', () => {
 			},
 		};
 
-		const selectorByDate = sandbox.spy((state, date, isComplete = false) =>
+		const selectorByDate = vi.fn((state, date, isComplete = false) =>
 			state.todos[date].filter((task) => task.complete === isComplete)
 		);
 
@@ -162,16 +164,16 @@ describe('createSelector', () => {
 		);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-01');
-		sinon.assert.calledOnce(selectorByDate);
+		expect(selectorByDate).toHaveBeenCalledTimes(1);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-02');
-		sinon.assert.calledTwice(selectorByDate);
+		expect(selectorByDate).toHaveBeenCalledTimes(2);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-01');
-		sinon.assert.calledTwice(selectorByDate);
+		expect(selectorByDate).toHaveBeenCalledTimes(2);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-02');
-		sinon.assert.calledTwice(selectorByDate);
+		expect(selectorByDate).toHaveBeenCalledTimes(2);
 	});
 
 	it('ensures equal argument length before returning cache', () => {
@@ -180,8 +182,8 @@ describe('createSelector', () => {
 		completed = getTasksByCompletion(state, true);
 		completed = getTasksByCompletion(state);
 
-		sinon.assert.calledTwice(selector);
-		assert.deepEqual(completed, selector(state));
+		expect(selector).toHaveBeenCalledTimes(2);
+		expect(completed).toEqual(selector(state));
 	});
 
 	it('exposes dependants getter', () => {
@@ -190,9 +192,9 @@ describe('createSelector', () => {
 
 		const dependants = getTasksByCompletion.getDependants(state, true);
 
-		assert.ok(Array.isArray(dependants));
-		assert.equal(dependants.length, 1);
-		assert.equal(dependants[0], todo);
-		sinon.assert.calledWith(getDependants, state, true);
+		expect(Array.isArray(dependants)).toBe(true);
+		expect(dependants.length).toBe(1);
+		expect(dependants[0]).toBe(todo);
+		expect(getDependants).toHaveBeenCalledWith(state, true);
 	});
 });

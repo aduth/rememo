@@ -7,7 +7,7 @@ Memoized selectors for Redux and other immutable object derivation.
 Rememo's default export is a function which accepts two arguments: the selector function whose return value is to be cached, and a second function which returns the reference or array of references upon which the selector's derivation depends. The return value is a new function which accepts the same arguments as the selector.
 
 ```js
-import createSelector from 'rememo';
+import { createSelector } from 'rememo';
 
 const getTasksByCompletion = createSelector(
 	// The expensive computation:
@@ -146,7 +146,7 @@ beforeEach(() => {
 
 Alternatively, you can create separate references (exports) for your memoized and unmemoized selectors, then test only the unmemoized selector.
 
-Refer to [Rememo's own tests](https://github.com/aduth/rememo/tree/master/test/rememo.js) as an example.
+Refer to [Rememo's own tests](https://github.com/aduth/rememo/tree/master/test/rememo.test.js) as an example.
 
 ## FAQ
 

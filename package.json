@@ -3,29 +3,31 @@
 	"type": "module",
 	"version": "4.0.2",
 	"description": "Memoized selectors for Redux and other immutable object derivation",
-	"main": "rememo.cjs",
-	"module": "rememo.js",
-	"types": "rememo.d.ts",
+	"main": "./dist/rememo.cjs",
+	"module": "./dist/rememo.mjs",
+	"types": "./dist/rememo.d.cts",
 	"exports": {
 		".": {
-			"import": "./rememo.js",
-			"require": "./rememo.cjs"
+			"import": {
+				"types": "./dist/rememo.d.mts",
+				"default": "./dist/rememo.mjs"
+			},
+			"require": {
+				"types": "./dist/rememo.d.cts",
+				"default": "./dist/rememo.cjs"
+			}
 		}
 	},
 	"files": [
-		"rememo.cjs",
-		"rememo.js",
-		"rememo.d.ts",
 		"dist"
 	],
 	"scripts": {
-		"test:lint": "eslint . --ignore-pattern dist",
+		"test:lint": "eslint . --ext .js,.ts --ignore-pattern dist",
 		"test:typecheck": "tsc",
-		"test:unit": "mocha",
+		"test:unit": "vitest run",
 		"test": "npm-run-all --parallel test:*",
-		"build:bundle": "rollup -c",
-		"build:types": "tsc -p tsconfig.decl.json",
-		"build": "npm-run-all --parallel build:*",
+		"build": "tsdown",
+		"dev": "tsdown --watch",
 		"prepublishOnly": "npm run build"
 	},
 	"repository": {
@@ -51,16 +53,16 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@aduth/eslint-config": "^4.4.1",
-		"@rollup/plugin-terser": "^0.4.4",
+		"@typescript-eslint/eslint-plugin": "^8.61.0",
+		"@typescript-eslint/parser": "^8.61.0",
 		"eslint": "^8.24.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-jsdoc": "^39.3.6",
 		"eslint-plugin-prettier": "^4.2.1",
-		"mocha": "^10.0.0",
 		"npm-run-all": "^4.1.5",
 		"prettier": "^2.7.1",
-		"rollup": "^4.24.0",
-		"sinon": "^14.0.1",
-		"typescript": "^4.8.4"
+		"tsdown": "^0.22.1",
+		"typescript": "^6.0.2",
+		"vitest": "^4.1.7"
 	}
 }

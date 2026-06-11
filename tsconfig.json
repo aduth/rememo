@@ -1,13 +1,12 @@
 {
 	"compilerOptions": {
-		"baseUrl": ".",
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"lib": ["DOM", "ES2015"],
-		"target": "ES5",
+		"target": "esnext",
 		"allowJs": true,
 		"checkJs": true,
 		"noEmit": true,
 		"strict": true
 	},
-	"files": ["rememo.js"]
+	"include": ["src"]
 }

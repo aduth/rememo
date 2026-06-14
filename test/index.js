@@ -1,18 +1,17 @@
-import assert from 'assert';
-import sinon from 'sinon';
+import { test, beforeEach, it } from 'node:test';
+import assert from 'node:assert/strict';
 import createSelector from '../rememo.js';
 
-describe('createSelector', () => {
+test('createSelector', (t) => {
 	let getTasksByCompletion;
-	const sandbox = sinon.createSandbox();
 
-	const selector = sandbox.spy((state, isComplete = false, extra) =>
+	const selector = t.mock.fn((state, isComplete = false, extra) =>
 		state.todo
 			.filter((task) => task.complete === isComplete)
-			.concat(extra || [])
+			.concat(extra || []),
 	);
 
-	const getDependants = sandbox.spy((state) => [state.todo]);
+	const getDependants = t.mock.fn((state) => [state.todo]);
 
 	const getState = () => ({
 		todo: [
@@ -23,7 +22,8 @@ describe('createSelector', () => {
 	});
 
 	beforeEach(() => {
-		sandbox.reset();
+		selector.mock.resetCalls();
+		getDependants.mock.resetCalls();
 		getTasksByCompletion = createSelector(selector, getDependants);
 	});
 
@@ -44,7 +44,7 @@ describe('createSelector', () => {
 		completed = getTasksByCompletion(state, true);
 		completed = getTasksByCompletion(state, true);
 
-		sinon.assert.calledOnce(selector);
+		assert.equal(selector.mock.callCount(), 1);
 		assert.deepEqual(completed, selector(state, true));
 	});
 
@@ -56,7 +56,7 @@ describe('createSelector', () => {
 		obj.mutated = true;
 		completed = getTasksByCompletion(state, true, obj);
 
-		sinon.assert.calledOnce(selector);
+		assert.equal(selector.mock.callCount(), 1);
 		assert.deepEqual(completed, selector(state, true, obj));
 	});
 
@@ -69,7 +69,7 @@ describe('createSelector', () => {
 		state = getState();
 		completed = getTasksByCompletionOnState(state, true);
 
-		sinon.assert.calledTwice(selector);
+		assert.equal(selector.mock.callCount(), 2);
 		assert.deepEqual(completed, selector(state, true));
 	});
 
@@ -79,7 +79,7 @@ describe('createSelector', () => {
 		completed = getTasksByCompletion(state, true, true);
 		completed = getTasksByCompletion(state, true, true);
 
-		sinon.assert.calledOnce(selector);
+		assert.equal(selector.mock.callCount(), 1);
 		assert.deepEqual(completed, selector(state, true, true));
 	});
 
@@ -88,7 +88,7 @@ describe('createSelector', () => {
 		const completed = getTasksByCompletion(state, true);
 		const uncompleted = getTasksByCompletion(state, false);
 
-		sinon.assert.calledTwice(selector);
+		assert.equal(selector.mock.callCount(), 2);
 		assert.deepEqual(completed, selector(state, true));
 		assert.deepEqual(uncompleted, selector(state, false));
 	});
@@ -99,7 +99,7 @@ describe('createSelector', () => {
 		state = getState();
 		completed = getTasksByCompletion(state, true);
 
-		sinon.assert.calledTwice(selector);
+		assert.equal(selector.mock.callCount(), 2);
 		assert.deepEqual(completed, selector(state, true));
 	});
 
@@ -113,7 +113,7 @@ describe('createSelector', () => {
 		state.ok = true;
 		completed = getTasksByCompletionOnCount(state, true);
 
-		sinon.assert.calledTwice(selector);
+		assert.equal(selector.mock.callCount(), 2);
 		assert.deepEqual(completed, selector(state, true));
 	});
 
@@ -126,7 +126,7 @@ describe('createSelector', () => {
 		obj = {};
 		completed = getTasksByCompletion(state, true, obj);
 
-		sinon.assert.calledTwice(selector);
+		assert.equal(selector.mock.callCount(), 2);
 		assert.deepEqual(completed, selector(state, true, obj));
 	});
 
@@ -137,7 +137,7 @@ describe('createSelector', () => {
 		state = Object.assign({}, state, { other: true });
 		completed = getTasksByCompletion(state, true);
 
-		sinon.assert.calledOnce(selector);
+		assert.equal(selector.mock.callCount(), 1);
 		assert.deepEqual(completed, selector(state, true));
 	});
 
@@ -152,26 +152,26 @@ describe('createSelector', () => {
 			},
 		};
 
-		const selectorByDate = sandbox.spy((state, date, isComplete = false) =>
-			state.todos[date].filter((task) => task.complete === isComplete)
+		const selectorByDate = t.mock.fn((state, date, isComplete = false) =>
+			state.todos[date].filter((task) => task.complete === isComplete),
 		);
 
 		const getTasksByCompletionByDate = createSelector(
 			selectorByDate,
-			(state, date) => state.todos[date]
+			(state, date) => state.todos[date],
 		);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-01');
-		sinon.assert.calledOnce(selectorByDate);
+		assert.equal(selectorByDate.mock.callCount(), 1);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-02');
-		sinon.assert.calledTwice(selectorByDate);
+		assert.equal(selectorByDate.mock.callCount(), 2);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-01');
-		sinon.assert.calledTwice(selectorByDate);
+		assert.equal(selectorByDate.mock.callCount(), 2);
 
 		getTasksByCompletionByDate(stateByDate, '2018-01-02');
-		sinon.assert.calledTwice(selectorByDate);
+		assert.equal(selectorByDate.mock.callCount(), 2);
 	});
 
 	it('ensures equal argument length before returning cache', () => {
@@ -180,7 +180,7 @@ describe('createSelector', () => {
 		completed = getTasksByCompletion(state, true);
 		completed = getTasksByCompletion(state);
 
-		sinon.assert.calledTwice(selector);
+		assert.equal(selector.mock.callCount(), 2);
 		assert.deepEqual(completed, selector(state));
 	});
 
@@ -193,6 +193,7 @@ describe('createSelector', () => {
 		assert.ok(Array.isArray(dependants));
 		assert.equal(dependants.length, 1);
 		assert.equal(dependants[0], todo);
-		sinon.assert.calledWith(getDependants, state, true);
+		assert.equal(getDependants.mock.callCount(), 1);
+		assert.deepEqual(getDependants.mock.calls[0].arguments, [state, true]);
 	});
 });

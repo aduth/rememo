@@ -19,7 +19,7 @@
 	"scripts": {
 		"test:lint": "eslint .",
 		"test:typecheck": "tsc",
-		"test:unit": "mocha",
+		"test:unit": "node --test",
 		"test": "npm-run-all --parallel test:*",
 		"build:types": "tsc -p tsconfig.decl.json",
 		"build": "npm-run-all --parallel build:*",
@@ -48,14 +48,13 @@
 	"license": "MIT",
 	"devDependencies": {
 		"@aduth/eslint-config": "^4.4.1",
+		"@types/node": "^25.9.3",
 		"eslint": "^8.24.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-jsdoc": "^39.3.6",
 		"eslint-plugin-prettier": "^4.2.1",
-		"mocha": "^10.0.0",
 		"npm-run-all": "^4.1.5",
 		"prettier": "^2.7.1",
-		"sinon": "^14.0.1",
 		"typescript": "^4.8.4"
 	}
 }

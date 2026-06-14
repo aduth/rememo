@@ -193,7 +193,6 @@ export default function (selector, getDependants) {
 		rootCache = new WeakMap();
 	}
 
-	/* eslint-disable jsdoc/check-param-names */
 	/**
 	 * The augmented selector call, considering first whether dependants have
 	 * changed before passing it to underlying memoize function.
@@ -203,7 +202,6 @@ export default function (selector, getDependants) {
 	 *
 	 * @return {*} Selector result.
 	 */
-	/* eslint-enable jsdoc/check-param-names */
 	function callSelector(/* source, ...extraArgs */) {
 		var len = arguments.length,
 			cache,

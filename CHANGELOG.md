@@ -1,3 +1,7 @@
+#### Unreleased
+
+- Breaking: The package is now ESM-only and no longer ships a CommonJS or browser-ready copies. This effectively raises the minimum supported Node.js version to v20.19.0.
+
 #### v4.0.2 (2022-10-04)
 
 - TypeScript: Fix issue preventing TypeScript types from being resolved

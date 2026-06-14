@@ -2,8 +2,6 @@
 node_modules
 
 # Generated
-dist
-/rememo.cjs
 /rememo.d.ts
 
 # System

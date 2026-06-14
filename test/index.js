@@ -1,6 +1,8 @@
 import { test, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
-import createSelector from '../rememo.js';
+import createSelector, {
+	createSelector as namedCreateSelector,
+} from '../rememo.js';
 
 test('createSelector', (t) => {
 	let getTasksByCompletion;
@@ -25,6 +27,10 @@ test('createSelector', (t) => {
 		selector.mock.resetCalls();
 		getDependants.mock.resetCalls();
 		getTasksByCompletion = createSelector(selector, getDependants);
+	});
+
+	it('exports both named and default exports', () => {
+		assert.equal(createSelector, namedCreateSelector);
 	});
 
 	it('exposes cache clearing method', () => {

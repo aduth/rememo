@@ -1,6 +1,7 @@
 #### Unreleased
 
-- Breaking: The package is now ESM-only and no longer ships a CommonJS or browser-ready copies. This effectively raises the minimum supported Node.js version to v20.19.0.
+- Breaking: The package is now ESM-only and no longer ships a CommonJS or browser-ready copies. This effectively raises the minimum supported Node.js version to v20.19.0, and CommonJS consumers must access the `default` or `createSelector` properties of the module exports.
+- New Feature: The package now exports a named `createSelector` export, which is the same as the default export.
 
 #### v4.0.2 (2022-10-04)
 

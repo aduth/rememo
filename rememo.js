@@ -121,7 +121,7 @@ function isShallowEqual(a, b, fromIndex) {
  * @param {GetDependants=} getDependants Dependant getter returning an array of
  * references used in cache bust consideration.
  */
-export default function (selector, getDependants) {
+export function createSelector(selector, getDependants) {
 	/** @type {WeakMap<*,*>} */
 	var rootCache;
 
@@ -292,3 +292,5 @@ export default function (selector, getDependants) {
 
 	return /** @type {S & EnhancedSelector} */ (callSelector);
 }
+
+export default createSelector;

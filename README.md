@@ -25,6 +25,13 @@ completedTasks = getTasksByCompletion(state, true); // Computed
 completedTasks = getTasksByCompletion(state, true); // Returned from cache
 ```
 
+`createSelector` is also available as a named export:
+
+```js
+import { createSelector } from 'rememo';
+// ...
+```
+
 ## Installation
 
 Rememo is published as an [npm](https://www.npmjs.com/) package:

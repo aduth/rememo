@@ -15,7 +15,7 @@ const getTasksByCompletion = createSelector(
 		state.todo.filter((task) => task.complete === isComplete),
 
 	// The reference(s) upon which the computation depends:
-	(state) => [state.todo]
+	(state) => [state.todo],
 );
 
 // The selector will only calculate the return value once so long as the state
@@ -63,18 +63,18 @@ The `getDependants` property can be useful when creating selectors which compose
 const getTasksByCompletion = createSelector(
 	(state, isComplete) =>
 		state.todo.filter((task) => task.complete === isComplete),
-	(state) => [state.todo]
+	(state) => [state.todo],
 );
 
 const getTasksByCompletionForCurrentDate = createSelector(
 	(state, isComplete) =>
 		getTasksByCompletion(state, isComplete).filter(
-			(task) => task.date === state.currentDate
+			(task) => task.date === state.currentDate,
 		),
 	(state, isComplete) => [
 		...getTasksByCompletion.getDependants(state, isComplete),
 		state.currentDate,
-	]
+	],
 );
 ```
 
@@ -114,7 +114,7 @@ In our above example, we know the value of the function will only change if the 
 const getTasksByCompletion = createSelector(
 	(state, isComplete) =>
 		state.todo.filter((task) => task.complete === isComplete),
-	(state) => [state.todo]
+	(state) => [state.todo],
 );
 ```
 
@@ -147,6 +147,6 @@ Rememo instead encourages you to consider the derivation first-and-foremost with
 
 ## License
 
-Copyright 2018-2022 Andrew Duthie
+Copyright 2018-2026 Andrew Duthie
 
 Released under the [MIT License](https://github.com/aduth/rememo/tree/master/LICENSE.md).

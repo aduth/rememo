@@ -3,7 +3,6 @@
 	"compilerOptions": {
 		"noEmit": false,
 		"declaration": true,
-		"emitDeclarationOnly": true,
-		"outFile": "rememo.d.ts"
+		"emitDeclarationOnly": true
 	}
 }

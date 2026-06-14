@@ -3,6 +3,7 @@
 		"moduleResolution": "nodenext",
 		"module": "nodenext",
 		"lib": ["DOM", "ES2015"],
+		"types": ["node"],
 		"target": "es6",
 		"allowJs": true,
 		"checkJs": true,
